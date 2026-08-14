@@ -9,11 +9,25 @@ artifacts/
 mlruns/
 mlflow.db
 optuna.db
-Baseline/*.parquet
-Baseline/catboost_info/
 
 # Bản demo tương tác cũ (đã archive, không dùng cho trang web hiện tại)
 docs_archive_interactive_demo/
 
 # macOS
 .DS_Store
+
+# Repo GitHub chỉ deploy trang web (docs/) — mọi thứ khác trong project KHÔNG public
+Baseline/
+reports/
+Teammate/
+.claude/
+*.ipynb
+*.pdf
+FT-Transformer.png
+FT-Transformer_v2.png
+baseline_reproduce.py
+matching_rider_acceptance_rate_condensed.md
+report.md
+report_part1_segment_errors.md
+requirements.txt
+rider_cancellation_baseline_model.md
