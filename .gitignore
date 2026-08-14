@@ -1,0 +1,19 @@
+# Môi trường / cache Python
+.venv/
+__pycache__/
+*.pyc
+
+# Dữ liệu + model tracking (nặng, không nên public lên GitHub)
+data/
+artifacts/
+mlruns/
+mlflow.db
+optuna.db
+Baseline/*.parquet
+Baseline/catboost_info/
+
+# Bản demo tương tác cũ (đã archive, không dùng cho trang web hiện tại)
+docs_archive_interactive_demo/
+
+# macOS
+.DS_Store
