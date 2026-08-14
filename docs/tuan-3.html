@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo Tuần 3 — Rider Acceptance Prediction</title>
+<meta name="description" content="Tuần 3: so sánh 6 model class (LightGBM, XGBoost, CatBoost, MLP, FT-Transformer, MambaTab) tune đúng Cancel PR-AUC, xử lý imbalance + calibration, Model V3.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;650&family=IBM+Plex+Serif:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<nav class="sitenav"><div class="sitenav-inner">
+  <a class="sitenav-link" href="index.html">Kiến trúc FT-Transformer</a>
+  <a class="sitenav-link" href="gioi-thieu.html">Bài toán</a>
+  <a class="sitenav-link" href="tuan-1.html">Tuần 1</a>
+  <a class="sitenav-link" href="tuan-2.html">Tuần 2</a>
+  <a class="sitenav-link active" href="tuan-3.html">Tuần 3</a>
+</div></nav>
+<div class="wrap wrap-top wrap-rest">
+
+  <header class="page">
+    <span class="eyebrow">Rider Acceptance Prediction · Tuần 3</span>
+    <h1>Modeling, Training &amp; Evaluation — 6 model class</h1>
+    <p class="subtitle">Từ short-list feature của Tuần 2 → build → train → evaluate thành pipeline chuẩn cho mọi model class; đề xuất model class thay thế LightGBM baseline.</p>
+    <table class="meta-table">
+      <tr><td class="k">Dự án</td><td>Rider Acceptance (Matching &amp; Dispatch)</td><td class="k">Tuần</td><td>W3 · 03/08–09/08/2026</td></tr>
+      <tr><td class="k">Test set</td><td>13/07/2026 (post-dispatch), n=8.609</td><td class="k">Trạng thái</td><td><span class="tag ok">✓ Bản cuối — 6 model đã tune đúng Cancel PR-AUC</span></td></tr>
+    </table>
+  </header>
+
+  <section class="block" id="dod">
+    <h2><span class="num">0</span>Định nghĩa of Done (DoD)</h2>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>#</th><th>Yêu cầu</th><th>Kết quả</th><th>Ghi chú</th></tr>
+        <tr><td class="num">1</td><td>Pipeline train &amp; đo trên CÙNG test set, feature list W2</td><td class="ok">✅ Đạt</td><td><span class="mono">split.py</span> time-based (không random); test 13/07 khoá 1 lần cho báo cáo cuối</td></tr>
+        <tr><td class="num">2</td><td>Đề xuất 1 model class khác LightGBM baseline</td><td class="ok">✅ XGBoost V2</td><td>Cancel PR-AUC cao nhất (0,2718) trong 6 model đã tune đúng chuẩn</td></tr>
+        <tr><td class="num">3</td><td>Bảng so sánh ≥4 model class, kèm train/test time</td><td class="ok">✅ 6 model</td><td>Tất cả đã Optuna-tune theo ĐÚNG Cancel PR-AUC; bootstrap CI đo độ tin cậy</td></tr>
+        <tr><td class="num">4</td><td>Toàn bộ run log MLflow, tái lập bằng 1 lệnh</td><td class="ok">✅ ~7,1 phút</td><td><span class="mono">run_w3_pipeline.py --skip-tuning</span> — verified end-to-end</td></tr>
+        <tr><td class="num">5</td><td>(Optional) Ý tưởng feature mới</td><td class="ok">✅ is_rainy_3h</td><td>Thời tiết (Open-Meteo) — tín hiệu sơ bộ trên 1 test day, CHƯA xác nhận qua nhiều fold</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="block" id="so-sanh">
+    <h2><span class="num">1</span>So sánh 6 model class — bản cuối cùng, xếp theo Cancel PR-AUC</h2>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Model</th><th class="num">Cancel PR-AUC (95% CI)</th><th class="num">ROC-AUC (95% CI)</th></tr>
+        <tr class="win"><td><b>XGBoost V2 ★</b></td><td class="num"><b>0,2718</b> (0,2436–0,3012)</td><td class="num">0,7490 (0,7314–0,7667)</td></tr>
+        <tr><td>LightGBM V2</td><td class="num">0,2692 (0,2418–0,2976)</td><td class="num">0,7493 (0,7315–0,7668)</td></tr>
+        <tr><td>CatBoost V2</td><td class="num">0,2669 (0,2387–0,2967)</td><td class="num">0,7463 (0,7294–0,7643)</td></tr>
+        <tr><td>MambaTab V2</td><td class="num">0,2497 (0,2222–0,2760)</td><td class="num">0,7395 (0,7215–0,7561)</td></tr>
+        <tr><td>MLP V2</td><td class="num">0,2462 (0,2199–0,2727)</td><td class="num">0,7424 (0,7235–0,7592)</td></tr>
+        <tr class="lose"><td>FT-Transformer V2</td><td class="num">0,2348 (0,2097–0,2619)</td><td class="num">0,7278 (0,7097–0,7461)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="block" id="de-xuat">
+    <h2><span class="num">2</span>Model class đề xuất — XGBoost V2</h2>
+    <div class="note good">
+      <b>Tune đúng metric làm khoảng cách RÕ RÀNG hơn hẳn</b> — sau khi TẤT CẢ 6 model được tune lại đúng theo Cancel PR-AUC (thay vì ROC-AUC như lần đầu): 3 GBDT tách biệt rõ (XGBoost thắng CatBoost 85,0%, thắng LightGBM 74,1% số vòng bootstrap — trước đây chỉ 36–57%, gần như tung đồng xu). FT-Transformer giờ RÕ RÀNG thấp nhất trong 6 model (thua MambaTab 97,5%, thua MLP 98,8%) — không còn mập mờ như bản tune đầu. FT-Transformer còn thể hiện train-run variance lớn: 3 kiến trúc khác nhau qua 3 lần tune (0,7475→0,7424→0,7452 ROC-AUC ở tune script) và ngay kiến trúc CUỐI CÙNG cũng dao động 0,0174 khi train lại độc lập.
+    </div>
+    <p><b>XGBoost V2</b> — Cancel PR-AUC cao nhất (0,2718), đồng thời <b>nhanh nhất</b> trong 3 GBDT (2,9s train) — thắng cả về độ chính xác lẫn tốc độ, không còn cần "tie-break theo tốc độ" như trước. FT-Transformer/MambaTab giữ lại làm hướng nghiên cứu thêm, không phải đề xuất production.</p>
+  </section>
+
+  <section class="block" id="imbalance">
+    <h2><span class="num">3</span>Xử lý Imbalance + Calibration</h2>
+    <p class="intro">Base rate lớp huỷ (y=0) ~9–10%. <span class="mono">scale_pos_weight</span> tăng recall mạnh nhưng phá calibration — bắt buộc phải calibrate lại + chọn lại threshold (không giữ 0,5).</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Giai đoạn (LightGBM)</th><th class="num">ROC-AUC</th><th class="num">PR-AUC huỷ</th><th class="num">ECE</th><th class="num">Recall huỷ</th></tr>
+        <tr><td>Gốc (không xử lý)</td><td class="num">0,7519</td><td class="num">0,2710</td><td class="num">0,0037</td><td class="num">0,0328</td></tr>
+        <tr><td>+ scale_pos_weight</td><td class="num">0,7472</td><td class="num">0,2635</td><td class="num">0,3139 <span class="tag no">vỡ</span></td><td class="num">0,6604 <span class="tag ok">✓</span></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="block" id="model-v3">
+    <h2><span class="num">4</span>Model V3 — XGBoost V2 (rebuild, hyperparameter Cancel-PR-AUC-tuned) + scale_pos_weight + Isotonic calibration</h2>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">ROC-AUC</div><div class="stat-value">0,7445</div></div>
+      <div class="stat-card win"><div class="stat-label">ECE — khôi phục</div><div class="stat-value">0,0074</div><div class="stat-delta good">từ 0,3104 (~×42)</div></div>
+      <div class="stat-card win"><div class="stat-label">F1 lớp huỷ</div><div class="stat-value">0,3146</div><div class="stat-delta good">từ 0,2964</div></div>
+    </div>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Giai đoạn</th><th class="num">ECE</th><th class="num">Recall huỷ</th><th class="num">F1 huỷ</th></tr>
+        <tr><td>Trước calib (thr 0,5)</td><td class="num">0,3104</td><td class="num">0,6465</td><td class="num">0,2964</td></tr>
+        <tr class="win"><td><b>Model V3 final (thr 0,85) ★</b></td><td class="num">0,0074</td><td class="num">0,4583</td><td class="num">0,3146</td></tr>
+        <tr class="lose"><td>Sau calib, quên đổi threshold 0,5</td><td class="num">0,0074</td><td class="num">0,0240</td><td class="num">0,0466</td></tr>
+      </table>
+    </div>
+    <div class="note">Không phải đánh đổi — chọn lại threshold sau calibration cho ĐỒNG THỜI ECE tốt VÀ F1 cao hơn bản trước-calib. Dòng cuối minh chứng: quên đổi threshold sẽ xoá sạch lợi ích của imbalance handling.</div>
+  </section>
+
+  <section class="block" id="ket-luan">
+    <h2><span class="num">5</span>Kết luận chung</h2>
+    <p>Pipeline W3 chuyển feature engineering W2 thành hệ thống modeling có kiểm soát, tái lập bằng 1 lệnh. Phát hiện quan trọng nhất KHÔNG phải "model nào thắng" mà là <b>tune ĐÚNG metric quyết định (Cancel PR-AUC, không phải ROC-AUC) cho TẤT CẢ model class</b> làm bức tranh so sánh rõ ràng và đáng tin hơn hẳn — trước đó 3 GBDT gần như hoà tuyệt đối và FT-Transformer/MambaTab mập mờ, sau khi tune đúng chuẩn thì XGBoost thắng dứt khoát và FT-Transformer rơi xuống rõ ràng thấp nhất.</p>
+    <p class="note">Hướng tiếp theo (Tuần 4): rolling-fold validation cho bước chọn model; xác nhận lại <span class="mono">is_rainy_3h</span> qua nhiều fold trước khi khẳng định.</p>
+  </section>
+
+  <footer>
+    Rider Acceptance Prediction · Tuần 3 · nguồn: <code>reports/W3_results_summary.pdf</code>, <code>reports/W3_results.ipynb</code> (bản đầy đủ) ·
+    tiếp theo: <a href="index.html">Kiến trúc FT-Transformer →</a>
+  </footer>
+
+</div>
+</body>
+</html>

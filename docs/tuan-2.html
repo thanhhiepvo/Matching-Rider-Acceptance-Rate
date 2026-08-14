@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo Tuần 2 — Rider Acceptance Prediction</title>
+<meta name="description" content="Tuần 2: phân tích lỗi theo phân khúc (SHAP), 28 thử nghiệm feature engineering (6 thành công), so sánh FAIR, reproducibility, và đổi kiến trúc is_post_dispatch.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;650&family=IBM+Plex+Serif:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<nav class="sitenav"><div class="sitenav-inner">
+  <a class="sitenav-link" href="index.html">Kiến trúc FT-Transformer</a>
+  <a class="sitenav-link" href="gioi-thieu.html">Bài toán</a>
+  <a class="sitenav-link" href="tuan-1.html">Tuần 1</a>
+  <a class="sitenav-link active" href="tuan-2.html">Tuần 2</a>
+  <a class="sitenav-link" href="tuan-3.html">Tuần 3</a>
+</div></nav>
+<div class="wrap wrap-top wrap-rest">
+
+  <header class="page">
+    <span class="eyebrow">Rider Acceptance Prediction · Tuần 2</span>
+    <h1>Feature Engineering &amp; Phân tích lỗi theo phân khúc</h1>
+    <p class="subtitle">Từ mốc đóng băng Tuần 1 (ROC-AUC post-dispatch 0,7267): chẩn đoán lỗi theo segment (kèm SHAP), 28 thử nghiệm feature engineering, so sánh FAIR tách theo kiến trúc, và xử lý 2 sai lệch reproducibility.</p>
+    <table class="meta-table">
+      <tr><td class="k">Dự án</td><td>Rider Acceptance (Matching &amp; Dispatch)</td><td class="k">Giai đoạn</td><td>Tuần 2</td></tr>
+      <tr><td class="k">Test set</td><td>13/07/2026, n=8.609 (post-dispatch)</td><td class="k">Trạng thái</td><td><span class="tag ok">✓ Hoàn thành — 6 feature mới, baseline 20ft (sau đó 19ft)</span></td></tr>
+    </table>
+  </header>
+
+  <section class="block" id="kien-truc">
+    <h2><span class="num">0</span>2 kiến trúc so sánh song song</h2>
+    <p class="intro">Xuyên suốt tuần này, mọi phân tích được chạy song song trên <b>2 cách xử lý <span class="mono">is_post_dispatch</span></b> — để trả lời câu hỏi: cờ này nên NẰM TRONG model hay tách ra làm rule?</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Kiến trúc</th><th>Mô tả</th></tr>
+        <tr><td><b>(A) Model-only</b></td><td><span class="mono">is_post_dispatch</span> nằm trong model như 1 feature bình thường (14ft) — model train trên cả pre-dispatch lẫn post-dispatch.</td></tr>
+        <tr><td><b>(B) Rule + Model</b></td><td><span class="mono">is_post_dispatch</span> bị bỏ khỏi model, chuyển thành 1 rule if/else bên ngoài: <span class="mono">False</span> → trả thẳng "huỷ"; <span class="mono">True</span> → mới qua model (13ft). Model chỉ train/infer trên post-dispatch.</td></tr>
+      </table>
+    </div>
+    <p class="note">Kết luận sớm (giữ nguyên xuyên suốt): 2 kiến trúc cho kết quả gần như tương đương trên baseline gốc (chênh ±0,002) — tách <span class="mono">is_post_dispatch</span> ra rule là thay đổi an toàn, không mất chất lượng. Baseline production hiện tại dùng <b>(B)</b>.</p>
+  </section>
+
+  <section class="block" id="segment">
+    <h2><span class="num">1</span>Phân tích lỗi theo segment (baseline v1 gốc)</h2>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Segment</th><th class="num">n</th><th class="num">Base rate</th><th class="num">AUC (A) 14ft</th><th class="num">AUC (B) 13ft</th><th class="num">Δ (B−A)</th></tr>
+        <tr class="win"><td><b>Toàn bộ post-dispatch</b></td><td class="num">8.609</td><td class="num">0,908</td><td class="num">0,7352</td><td class="num">0,7356</td><td class="num">+0,0004</td></tr>
+        <tr class="lose"><td><b>Khách mới</b> ← yếu nhất</td><td class="num">745</td><td class="num">0,891</td><td class="num">0,7031</td><td class="num">0,7010</td><td class="num">−0,0021</td></tr>
+        <tr><td>Khách quen</td><td class="num">7.864</td><td class="num">0,910</td><td class="num">0,7379</td><td class="num">0,7385</td><td class="num">+0,0006</td></tr>
+        <tr><td>Giờ cao điểm</td><td class="num">3.272</td><td class="num">0,903</td><td class="num">0,7426</td><td class="num">0,7424</td><td class="num">−0,0002</td></tr>
+        <tr><td>Giờ thường</td><td class="num">5.337</td><td class="num">0,911</td><td class="num">0,7298</td><td class="num">0,7303</td><td class="num">+0,0005</td></tr>
+        <tr><td>ETA dài (&gt;600s)*</td><td class="num">45</td><td class="num">0,867</td><td class="num">0,8419</td><td class="num">0,8205</td><td class="num">−0,0214</td></tr>
+        <tr><td>ETA ngắn (≤600s)</td><td class="num">8.264</td><td class="num">0,908</td><td class="num">0,7289</td><td class="num">0,7293</td><td class="num">+0,0004</td></tr>
+      </table>
+    </div>
+    <p class="note">*Mẫu ETA dài quá nhỏ (45 dòng) — không đủ tin cậy thống kê. <b>Khách mới là segment yếu nhất rõ rệt</b> (AUC ~0,70, thấp hơn "Toàn bộ" gần 3,5 điểm AUC).</p>
+
+    <h3>Recall / Precision / PR-AUC (lớp huỷ) theo segment</h3>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Segment</th><th class="num">Recall (A)</th><th class="num">Recall (B)</th><th class="num">Precision (A)</th><th class="num">Precision (B)</th></tr>
+        <tr><td>Toàn bộ post-dispatch</td><td class="num">0,0227</td><td class="num">0,0227</td><td class="num">0,783</td><td class="num">0,818</td></tr>
+        <tr class="lose"><td><b>Khách mới</b></td><td class="num"><b>0,0123</b></td><td class="num">0,0123</td><td class="num">1,000</td><td class="num">1,000</td></tr>
+        <tr><td>Giờ thường</td><td class="num">0,0253</td><td class="num">0,0274</td><td class="num">0,750</td><td class="num">0,813</td></tr>
+      </table>
+    </div>
+    <p>Recall thấp ở mọi segment, nhưng <b>khách mới đặc biệt tệ: recall chỉ 0,0123</b> (bắt được 1/81 đơn huỷ thực tế) — nguyên nhân gốc: threshold 0,5 quá cao so với base rate ~90–91% (đa số đơn ở segment nào cũng là "đi"), không phải khác biệt giữa 2 kiến trúc.</p>
+  </section>
+
+  <section class="block" id="nguyen-nhan">
+    <h2><span class="num">2</span>Đi tìm nguyên nhân — soi trực tiếp FN/FP</h2>
+    <p class="intro">Tách 4 nhóm ở threshold 0,5 trên baseline v1 gốc (14ft) — xét <b>cả 2 chiều lỗi</b> trước khi xếp hạng feature, để candidate tìm được không vô tình gây hại chiều ngược lại.</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Nhóm</th><th>Định nghĩa</th><th class="num">n</th><th class="num">%</th></tr>
+        <tr class="lose"><td><b>FN</b> — huỷ, đoán sai (đoán sẽ đi)</td><td>y=huỷ, p≥0,5</td><td class="num"><b>775</b></td><td class="num">97,8%</td></tr>
+        <tr><td><b>FP</b> — đi, đoán sai (đoán sẽ huỷ)</td><td>y=đi, p&lt;0,5</td><td class="num"><b>6</b></td><td class="num">0,8%</td></tr>
+        <tr><td>TP — huỷ, bắt đúng</td><td>y=huỷ, p&lt;0,5</td><td class="num">17</td><td class="num">—</td></tr>
+        <tr><td>TN — đi, đoán đúng</td><td>y=đi, p≥0,5</td><td class="num">7.811</td><td class="num">—</td></tr>
+      </table>
+    </div>
+    <p>FN áp đảo về khối lượng (775 vs 6, ~129:1). 6 đơn FP đều là chuyến <b>giá cao, đường dài, khách có lịch sử huỷ cao</b> — cùng hướng "rủi ro cao hơn" với FN, không mâu thuẫn nhau, nên bảng xếp hạng feature dưới đây an toàn để dùng.</p>
+
+    <h3>Cột số (numeric) — % lệch giữa FN và TP</h3>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Cột</th><th class="num">FN (median)</th><th class="num">TP (median)</th><th class="num">% lệch</th><th>Đã có trong baseline?</th></tr>
+        <tr class="win"><td><b>cust_cancel_rate_30d</b></td><td class="num">0,167</td><td class="num">0,094</td><td class="num"><b>76,7%</b></td><td class="ok">✅ Có sẵn</td></tr>
+        <tr class="win"><td><b>pickup_distance_km</b></td><td class="num">1,171</td><td class="num">0,761</td><td class="num"><b>53,9%</b></td><td class="no">❌ Chưa — ứng viên #1</td></tr>
+        <tr><td>eta_seconds</td><td class="num">248,95</td><td class="num">197,44</td><td class="num">26,1%</td><td class="ok">✅ Có sẵn</td></tr>
+        <tr><td>trip_distance_km</td><td class="num">4,77</td><td class="num">5,38</td><td class="num">11,4%</td><td class="ok">✅ Có sẵn</td></tr>
+        <tr><td>cust_completion_rate_30d</td><td class="num">0,786</td><td class="num">0,857</td><td class="num">8,3%</td><td class="no">❌ Chưa — ứng viên</td></tr>
+        <tr><td>dist_hotspot_km</td><td class="num">2,27</td><td class="num">2,10</td><td class="num">8,2%</td><td class="no">❌ Chưa — ứng viên</td></tr>
+        <tr><td>dist_center_km</td><td class="num">6,86</td><td class="num">6,51</td><td class="num">5,4%</td><td class="no">❌ Chưa — ứng viên</td></tr>
+        <tr><td>dist_airport_km</td><td class="num">23,41</td><td class="num">23,06</td><td class="num">1,6%</td><td class="no">❌ Chưa (lệch quá nhỏ)</td></tr>
+      </table>
+    </div>
+    <h3>Cột phân loại (categorical) — % lệch tỉ trọng</h3>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Cột</th><th>Giá trị lệch nhiều nhất</th><th class="num">FN %</th><th class="num">TP %</th><th>Đã có?</th></tr>
+        <tr class="win"><td><b>payment_method</b></td><td class="mono">cash</td><td class="num">68,5%</td><td class="num">61,9%</td><td class="no">❌ Chưa — ứng viên</td></tr>
+        <tr><td>vertical_name</td><td class="mono">Bike</td><td class="num">48,8%</td><td class="num">38,6%</td><td class="ok">✅ Có sẵn (chưa đủ mịn)</td></tr>
+      </table>
+    </div>
+    <p class="note"><b>Kết luận mục 2</b> — ứng viên ưu tiên cao nhất: <span class="mono">pickup_distance_km</span> (#1 numeric) và <span class="mono">payment_method</span> (#1 categorical). Đối chiếu với FP: không ứng viên nào có dấu hiệu "sửa FN thì hại FP".</p>
+
+    <h3>Phụ lục · SHAP — vì sao FN bị đoán sai một cách tự tin?</h3>
+    <p>SHAP (<b>SHapley Additive exPlanations</b>, <span class="mono">TreeExplainer</span> — chính xác tuyệt đối cho model dạng cây) phân rã mỗi dự đoán thành tổng đóng góp có dấu của từng feature so với 1 <b>base value</b> chung:</p>
+    <div class="formula-card">
+      <div class="katex-formula" data-display="1" data-tex="f(x) = \text{base\_value} + \sum_i \text{SHAP\_value}(feature_i)"></div>
+      <div class="note">SHAP dương = kéo dự đoán về "sẽ đi"; SHAP âm = kéo về "huỷ".</div>
+    </div>
+    <div class="fig-row">
+      <figure class="report-fig">
+        <img src="img/shap_a1_waterfall.png" alt="SHAP waterfall — đơn FN tự tin sai nhất">
+        <figcaption>Waterfall — đơn FN tự tin sai nhất: <span class="mono">p(sẽ đi)=0,998</span> nhưng thực tế khách huỷ. Mỗi thanh đỏ là 1 feature kéo dự đoán về "sẽ đi".</figcaption>
+      </figure>
+      <figure class="report-fig">
+        <img src="img/shap_a2_beeswarm.png" alt="SHAP beeswarm — nhóm FN">
+        <figcaption>Beeswarm — phân bố đóng góp từng feature trong toàn bộ nhóm FN (Model A).</figcaption>
+      </figure>
+    </div>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Feature</th><th class="num">SHAP TB — FN</th><th class="num">SHAP TB — TP</th><th class="num">Chênh lệch</th></tr>
+        <tr class="win"><td><b>cust_cancel_rate_30d</b></td><td class="num">−0,1185</td><td class="num"><b>−1,4808</b></td><td class="num"><b>+1,3624</b></td></tr>
+        <tr><td>cust_orders_30d</td><td class="num">−0,1954</td><td class="num">−0,6087</td><td class="num">+0,4133</td></tr>
+        <tr><td>eta_seconds</td><td class="num">−0,1698</td><td class="num">−0,5323</td><td class="num">+0,3625</td></tr>
+      </table>
+    </div>
+    <p class="note"><b>Phát hiện chính</b>: <span class="mono">cust_cancel_rate_30d</span> có chênh SHAP lớn nhất giữa FN/TP — nhưng ngược trực giác: model bắt đúng (TP) chính xác vì gặp khách có lịch sử huỷ <i>cực đoan</i>; phần lớn đơn huỷ thật (FN) lại đến từ khách <b>KHÔNG</b> có lịch sử huỷ nổi bật, nên feature này "im lặng" đúng lúc cần nhất. Đây là lý do cần feature <b>không phụ thuộc lịch sử khách</b> (<span class="mono">pickup_distance_km</span>, <span class="mono">payment_method</span>, <span class="mono">dist_center_km</span>...). Kiểm định A/B (2 kiến trúc) cho cùng 1 câu chuyện SHAP — tách <span class="mono">is_post_dispatch</span> ra rule không đổi nguyên nhân gốc.</p>
+  </section>
+
+  <section class="block" id="fe-log">
+    <h2><span class="num">3</span>Feature Engineering — 28 thử nghiệm, 6 thành công</h2>
+    <p class="intro">Tất cả dùng LightGBM (feature gốc + feature thử nghiệm, cộng dồn qua từng thử nghiệm thành công), cùng split train/test theo thời gian.</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>#</th><th>Feature thêm</th><th class="num">AUC tổng</th><th class="num">AUC post</th><th>Kết luận</th></tr>
+        <tr><td class="num">—</td><td>Gốc (mốc so sánh)</td><td class="num">0,8624</td><td class="num">0,7342</td><td>—</td></tr>
+        <tr class="lose"><td class="num">1</td><td>Đa cửa sổ (7d/14d)</td><td class="num">0,8618</td><td class="num">0,7330</td><td class="no">Giảm nhẹ</td></tr>
+        <tr class="lose"><td class="num">2</td><td>Recency (days_since_*)</td><td class="num">0,8611</td><td class="num">0,7317</td><td class="no">Giảm, gain rất thấp</td></tr>
+        <tr class="lose"><td class="num">3</td><td>is_new_customer</td><td class="num">0,8625</td><td class="num">0,7344</td><td class="no">Gain = 0 tuyệt đối</td></tr>
+        <tr class="win"><td class="num">4</td><td><b>pickup_distance_km</b></td><td class="num"><b>0,8671</b></td><td class="num"><b>0,7433</b></td><td class="ok">✅ +0,0091</td></tr>
+        <tr class="lose"><td class="num">5</td><td>service_name (~40 giá trị)</td><td class="num">0,8661</td><td class="num">0,7413</td><td class="no">Giảm dù gain cao — overfit</td></tr>
+        <tr class="win"><td class="num">6</td><td><b>payment_method</b></td><td class="num"><b>0,8689</b></td><td class="num"><b>0,7468</b></td><td class="ok">✅ +0,0035</td></tr>
+        <tr class="lose"><td class="num">7</td><td>is_deep_night (0h–4h)</td><td class="num">0,8684</td><td class="num">0,7458</td><td class="no">Giảm, gain gần 0</td></tr>
+        <tr class="win"><td class="num">8</td><td><b>dist_center_km</b></td><td class="num"><b>0,8699</b></td><td class="num"><b>0,7487</b></td><td class="ok">✅ +0,0019</td></tr>
+        <tr class="lose"><td class="num">9</td><td>pickup_speed_kmh (tổ hợp)</td><td class="num">0,8699</td><td class="num">0,7487</td><td class="no">Không đổi</td></tr>
+        <tr class="lose"><td class="num">10</td><td>pickup_quadrant</td><td class="num">0,8693</td><td class="num">0,7474</td><td class="no">Giảm, gain thấp nhất hệ thống</td></tr>
+        <tr class="win"><td class="num">11</td><td><b>cust_completion_rate_30d</b></td><td class="num"><b>0,8703</b></td><td class="num"><b>0,7494</b></td><td class="ok">✅ +0,0004</td></tr>
+        <tr class="lose"><td class="num">12</td><td>area_cancel_rate_7d (ô ~1km)</td><td class="num">0,8693</td><td class="num">0,7475</td><td class="no">Giảm — overfit ô thưa mẫu</td></tr>
+        <tr class="lose"><td class="num">13</td><td>cust_tenure_days</td><td class="num">0,8697</td><td class="num">0,7483</td><td class="no">Tín hiệu quá yếu</td></tr>
+        <tr class="win"><td class="num">14</td><td><b>dist_airport_km</b></td><td class="num"><b>0,8708</b></td><td class="num"><b>0,7503</b></td><td class="ok">✅ +0,0009</td></tr>
+        <tr class="lose"><td class="num">15</td><td>area_cancel_rate_14d (ô ~5,5km)</td><td class="num">0,8696</td><td class="num">0,7481</td><td class="no">Giảm — trùng dist_center_km</td></tr>
+        <tr class="lose"><td class="num">16</td><td>fee_percentile_in_vertical</td><td class="num">0,8704</td><td class="num">0,7497</td><td class="no">Giảm dù gain rất cao</td></tr>
+        <tr class="lose"><td class="num">17</td><td>is_eta_missing</td><td class="num">0,8708</td><td class="num">0,7504</td><td class="no">Gain = 0,000 tuyệt đối</td></tr>
+        <tr class="lose"><td class="num">18</td><td>re_dispatch_counts (categorical)</td><td class="num">0,8703</td><td class="num">0,7495</td><td class="no">Giảm, gain giảm theo</td></tr>
+        <tr class="win"><td class="num">19</td><td><b>dist_hotspot_km</b></td><td class="num"><b>0,8709</b></td><td class="num"><b>0,7505</b></td><td class="ok">✅ +0,0002</td></tr>
+        <tr class="lose"><td class="num">20–26</td><td>Tương tác nhân 2–5 chiều (7 thử nghiệm)</td><td class="num">0,8696–0,8708</td><td class="num">0,7481–0,7504</td><td class="no">Tất cả giảm ROC-AUC — xem ghi chú Cancel PR-AUC bên dưới</td></tr>
+        <tr class="lose"><td class="num">27</td><td>Batch gộp 4 feature thất bại</td><td class="num">0,8704</td><td class="num">0,7495</td><td class="no">Giảm, không vượt baseline</td></tr>
+        <tr class="lose"><td class="num">28</td><td>Batch gộp 8 toán hạng tương tác</td><td class="num">0,8704</td><td class="num">0,7496</td><td class="no">Giảm, không vượt baseline</td></tr>
+      </table>
+    </div>
+    <div class="note">→ <b>Thử nghiệm 4, 6, 8, 11, 14, 19 được giữ lại</b> — baseline production có <b>20 feature</b> (14 gốc + 6 mới). 22 thử nghiệm còn lại đã revert.</div>
+
+    <details class="exp-log">
+      <summary>Xem ghi chú Cancel PR-AUC cho 3 thử nghiệm tương tác nhân (20/23/26) — cập nhật 10/08/2026</summary>
+      <div style="padding: 0 18px 16px">
+        <p>3 thử nghiệm 20/23/26 là 3 trường hợp DUY NHẤT có PR-AUC huỷ tăng dù ROC-AUC giảm lúc đó, nên bị nghi ngờ là revert oan khi W3 đổi tiêu chí chính sang Cancel PR-AUC. Test lại trên baseline production hiện tại (ROC-AUC=0,7519 · Cancel PR-AUC=0,2710):</p>
+        <div class="table-wrap">
+          <table class="report">
+            <tr><th>Thêm feature</th><th class="num">ROC-AUC</th><th class="num">Cancel PR-AUC</th><th>So baseline hiện tại</th></tr>
+            <tr><td>20. cancelrate_x_pickupdist</td><td class="num">0,7501</td><td class="num">0,2705</td><td class="no">Giảm cả 2</td></tr>
+            <tr><td>23. hotspot_x_redispatch</td><td class="num">0,7499</td><td class="num">0,2673</td><td class="no">Giảm cả 2</td></tr>
+            <tr><td>26. geo5_redispatch</td><td class="num">0,7506</td><td class="num">0,2668</td><td class="no">Giảm cả 2</td></tr>
+          </table>
+        </div>
+        <p class="note">Kết luận không đổi — cả 3 vẫn nên revert, kể cả dưới tiêu chí Cancel PR-AUC. "PR-AUC huỷ TĂNG" ghi nhận lúc đó chỉ đúng so với baseline yếu hơn tại thời điểm đó — không phải may mắn nhờ chọn sai metric.</p>
+      </div>
+    </details>
+
+    <h3>Kết quả cuối cùng — cả 5 model (20 feature)</h3>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Model</th><th class="num">ROC-AUC (tổng)</th><th class="num">ROC-AUC (post)</th></tr>
+        <tr><td>MLP v2</td><td class="num">0,8666</td><td class="num">0,7423</td></tr>
+        <tr><td>LightGBM baseline</td><td class="num">0,8709</td><td class="num">0,7505</td></tr>
+        <tr class="win"><td><b>Hybrid GBDT+NN</b></td><td class="num"><b>0,8710</b></td><td class="num"><b>0,7508</b></td></tr>
+        <tr><td>Ensemble (avg)</td><td class="num">0,8700</td><td class="num">0,7489</td></tr>
+        <tr><td>Stacking</td><td class="num">0,8702</td><td class="num">0,7493</td></tr>
+      </table>
+    </div>
+    <p class="note good">Hybrid GBDT+NN dẫn đầu (rất sát LightGBM solo). ROC-AUC post-dispatch <b>0,7508</b> — tăng <b>+0,0241</b> so với mốc đóng băng Tuần 1 (0,7267).</p>
+  </section>
+
+  <section class="block" id="fair">
+    <h2><span class="num">4</span>So sánh FAIR — hiệu quả thật của FE, tách theo kiến trúc</h2>
+    <p class="intro">So sánh thẳng "Baseline v0 (14ft, model-only)" với "Baseline hiện tại (19ft, rule+model)" là <b>không fair</b> — 2 model khác nhau ở 2 chỗ cùng lúc (kiến trúc VÀ feature count). Tách thành 2 cặp so sánh, mỗi cặp chỉ đổi đúng 1 biến:</p>
+    <h3>FAIR #1 — Model-only: 14ft (gốc) vs 20ft (+FE)</h3>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Metric</th><th class="num">14ft (post)</th><th class="num">20ft (post)</th><th class="num">Δ post</th></tr>
+        <tr class="win"><td>roc_auc</td><td class="num">0,7342</td><td class="num"><b>0,7498</b></td><td class="num"><b>+0,0156</b></td></tr>
+        <tr class="win"><td>pr_auc_cancel</td><td class="num">0,2494</td><td class="num"><b>0,2670</b></td><td class="num"><b>+0,0176</b></td></tr>
+        <tr><td>recall_cancel</td><td class="num">0,0215</td><td class="num">0,0290</td><td class="num">+0,0075</td></tr>
+      </table>
+    </div>
+    <h3>FAIR #2 — Rule + Model: 13ft (gốc) vs 19ft (+FE = Baseline hiện tại)</h3>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Metric</th><th class="num">13ft (post)</th><th class="num">19ft (post)</th><th class="num">Δ post</th></tr>
+        <tr class="win"><td>roc_auc</td><td class="num">0,7356</td><td class="num"><b>0,7500</b></td><td class="num"><b>+0,0144</b></td></tr>
+        <tr class="win"><td>pr_auc_cancel</td><td class="num">0,2502</td><td class="num"><b>0,2685</b></td><td class="num"><b>+0,0183</b></td></tr>
+        <tr><td>recall_cancel</td><td class="num">0,0227</td><td class="num">0,0303</td><td class="num">+0,0076</td></tr>
+      </table>
+    </div>
+    <figure class="report-fig">
+      <img src="img/part2_roc_fair.png" alt="ROC-AUC theo vòng boosting — 2 cặp so sánh fair">
+      <figcaption>ROC-AUC theo vòng boosting, 2 cặp so sánh fair. 2 subplot KHÔNG cùng thang trực tiếp (trái: toàn bộ test — "ảo cao"; phải: post-dispatch thuần — khó hơn).</figcaption>
+    </figure>
+    <p class="note"><b>Chênh lệch ΔAUC giữa 2 kiến trúc rất nhỏ</b> (post: 0,0012, toàn bộ/hệ thống: 0,0006) — 6 feature FE cải thiện gần như CÙNG mức độ dù <span class="mono">is_post_dispatch</span> nằm trong model hay ngoài rule. FE và đổi kiến trúc là <b>2 quyết định độc lập, trực giao</b>, không tương tác lẫn nhau.</p>
+  </section>
+
+  <section class="block" id="shap-fe">
+    <h2><span class="num">5</span>Feature importance &amp; SHAP — "quyền giải thích" chuyển dịch về đâu</h2>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Feature</th><th class="num">Gain (19ft)</th><th>Feature mới?</th></tr>
+        <tr class="win"><td><b>pickup_distance_km</b></td><td class="num"><b>53.442</b></td><td class="ok">✅</td></tr>
+        <tr><td>vertical_name</td><td class="num">30.529</td><td></td></tr>
+        <tr><td>cust_cancel_rate_30d</td><td class="num">26.555</td><td></td></tr>
+        <tr><td>eta_seconds</td><td class="num">25.866</td><td></td></tr>
+        <tr><td>cust_completion_rate_30d</td><td class="num">10.326</td><td class="ok">✅</td></tr>
+        <tr><td>dist_center_km</td><td class="num">9.790</td><td class="ok">✅</td></tr>
+        <tr><td>payment_method</td><td class="num">7.332</td><td class="ok">✅</td></tr>
+        <tr><td>dist_hotspot_km</td><td class="num">5.655</td><td class="ok">✅</td></tr>
+        <tr><td>dist_airport_km</td><td class="num">5.056</td><td class="ok">✅</td></tr>
+      </table>
+    </div>
+    <figure class="report-fig">
+      <img src="img/part2_feat_importance.png" alt="Feature importance — Baseline hiện tại 19ft">
+      <figcaption><span class="mono">pickup_distance_km</span> đứng đầu bảng về gain — đóng góp lớn nhất trong 6 feature mới.</figcaption>
+    </figure>
+    <p>SHAP (đo trên TEST, phản ánh khả năng generalize) xác nhận đúng thứ hạng này — <b>|SHAP| trung bình gần như giống hệt nhau giữa 2 kiến trúc</b> cho từng feature FE:</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Feature FE</th><th class="num">|SHAP| — A (20ft)</th><th class="num">|SHAP| — B (19ft)</th></tr>
+        <tr class="win"><td><b>pickup_distance_km</b></td><td class="num">0,2483</td><td class="num">0,2426</td></tr>
+        <tr><td>payment_method</td><td class="num">0,1167</td><td class="num">0,1153</td></tr>
+        <tr><td>cust_completion_rate_30d</td><td class="num">0,0454</td><td class="num">0,0507</td></tr>
+        <tr><td>dist_center_km</td><td class="num">0,0392</td><td class="num">0,0404</td></tr>
+        <tr><td>dist_hotspot_km</td><td class="num">0,0239</td><td class="num">0,0271</td></tr>
+        <tr><td>dist_airport_km</td><td class="num">0,0191</td><td class="num">0,0253</td></tr>
+      </table>
+    </div>
+    <div class="fig-row">
+      <figure class="report-fig">
+        <img src="img/part2shap_13ft_beeswarm.png" alt="SHAP beeswarm 13ft gốc">
+        <figcaption>Beeswarm — 13ft (gốc, rule+model)</figcaption>
+      </figure>
+      <figure class="report-fig">
+        <img src="img/part2shap_19ft_beeswarm.png" alt="SHAP beeswarm 19ft +FE">
+        <figcaption>Beeswarm — 19ft (+FE = Baseline hiện tại)</figcaption>
+      </figure>
+    </div>
+    <p class="note"><b><span class="mono">pickup_distance_km</span> là feature FE giá trị nhất</b> — nhất quán qua 3 góc nhìn khác nhau: gain trên TRAIN (mục 3), SHAP trên TEST (mục này), và AUC riêng lẻ khi thử nghiệm (+0,0091, lớn nhất trong 6 thử nghiệm thành công).</p>
+  </section>
+
+  <section class="block" id="repro">
+    <h2><span class="num">6</span>Khả năng tái lập kết quả (Reproducibility)</h2>
+    <p class="intro">Khi so kết quả với mentor/teammate, phát hiện 2 mức sai lệch khác nhau — đã điều tra và xác định nguyên nhân cho cả 2.</p>
+    <h3>6.1 · Sai lệch lớn: 0,7342 (mình) vs 0,7267 (mentor) — khác BỘ DỮ LIỆU</h3>
+    <p>Không phải lỗi — 2 bên đo trên 2 input khác nhau: data 8 ngày (mốc Tuần 1, ROC-AUC 0,7267) vs data 30 ngày mở rộng đầu Tuần 2 (ROC-AUC 0,7342). Đã tái lập chính xác cả 2 con số bằng cách chạy lại đúng cấu hình tương ứng.</p>
+    <h3>6.2 · Sai lệch nhỏ: 0,7342 (MacBook) vs 0,7333 (teammate, Windows)</h3>
+    <p>2 nguyên nhân: (1) LightGBM train đa luồng không bit-exact reproducible dù cố định seed; (2) khác OS/kiến trúc CPU (Mac ARM vs Windows x86, khác binary biên dịch).</p>
+    <div class="note good">Đã fix (1) bằng <span class="mono">deterministic=True, force_row_wise=True</span> trong <span class="mono">PARAMS</span> (áp dụng toàn pipeline vì các script train khác import chung). KHÔNG fix được (2) — chênh lệch ~0,001 giữa 2 máy khác OS là mức chấp nhận được.</div>
+  </section>
+
+  <section class="block" id="architecture-change">
+    <h2><span class="num">7</span>Thay đổi kiến trúc: <span class="mono" style="font-size:18px">is_post_dispatch</span> từ feature → rule</h2>
+    <p class="intro"><span class="mono">is_post_dispatch</span> luôn là feature áp đảo nhất (gain gấp hàng chục lần feature #2) vì gần như là 1 rule tất định: <span class="mono">False → y_accept=0</span> đúng 100% theo định nghĩa dữ liệu — không phải thứ model cần "học". Để nó làm 1 feature khiến model lãng phí "ngân sách" và số liệu tổng bị thổi phồng.</p>
+    <p>→ Tách thành rule if/else ở tầng ngoài model: <span class="mono">is_post_dispatch=False</span> → trả thẳng "huỷ"; <span class="mono">True</span> → mới qua model (giờ CHỈ train/infer trên post-dispatch).</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th></th><th>Kiến trúc cũ (feature)</th><th>Kiến trúc mới (rule)</th></tr>
+        <tr><td>Số feature model thấy</td><td>20</td><td>19</td></tr>
+        <tr><td>Train</td><td>270.763 dòng (cả pre+post)</td><td>245.982 dòng (chỉ post-dispatch)</td></tr>
+        <tr><td>test-post (LightGBM)</td><td>0,7505</td><td>0,7500</td></tr>
+      </table>
+    </div>
+    <p class="note">Chênh lệch cực nhỏ (~0,0003–0,0005) — bỏ dòng pre-dispatch ra khỏi train <b>không làm mất thông tin có ích</b>. Đổi kiến trúc chủ yếu lợi ích về <b>thiết kế</b> (đơn giản, dễ diễn giải hơn), không phải để tăng AUC.</p>
+    <h3>Kết quả cuối cùng — cả 5 model (kiến trúc mới, 19 feature)</h3>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Model</th><th class="num">test (post, model thuần)</th><th class="num">Cancel PR-AUC</th></tr>
+        <tr><td>MLP v2</td><td class="num">0,7417</td><td class="num">0,2490</td></tr>
+        <tr><td>Hybrid GBDT+NN</td><td class="num">0,7466</td><td class="num">0,2615</td></tr>
+        <tr><td>Ensemble (avg)</td><td class="num">0,7486</td><td class="num">0,2648</td></tr>
+        <tr class="win"><td><b>LightGBM baseline</b></td><td class="num">0,7500</td><td class="num"><b>0,2685</b></td></tr>
+        <tr class="win"><td><b>Stacking</b></td><td class="num"><b>0,7506</b></td><td class="num">0,2666</td></tr>
+      </table>
+    </div>
+    <p class="note">Thứ hạng ĐỔI khi xếp theo Cancel PR-AUC: LightGBM baseline (0,2685) nhỉnh hơn Stacking (0,2666) dù Stacking thắng sít sao theo ROC-AUC — cùng bài học với Tuần 3 (ROC-AUC có thể che mất khác biệt thật ở khả năng xếp hạng lớp huỷ). Coi 2 model này ngang nhau trong phạm vi nhiễu.</p>
+  </section>
+
+  <section class="block" id="ket-luan">
+    <h2><span class="num">8</span>Kết luận chung</h2>
+    <ul>
+      <li><b>Baseline mới có 20 feature</b> (14 gốc + 6 thành công) — feature engineering thành công khi đổi đúng loại nguồn tín hiệu (cột có sẵn bị bỏ sót, dẫn xuất mới từ landmark/cụm, phần dư dữ liệu) thay vì biến tấu từ nguồn đã bão hoà.</li>
+      <li><b>28 thử nghiệm, 6 thành công (~21%)</b> — đã quét gần như toàn diện: đa cửa sổ lịch sử, recency, 3 hướng địa lý, categorical encoding, percentile, 9 thử nghiệm tương tác nhân.</li>
+      <li><b>Phân khúc yếu nhất dịch chuyển 2 lần</b>: khách mới (0,7046) → giờ thường (0,7427) → ETA ngắn/giờ thường (~0,744–0,745, khách mới cải thiện lên 0,748) — vấn đề còn lại là <b>giới hạn ngưỡng quyết định</b>, không còn thiếu feature.</li>
+      <li><b>Đã kiểm tra: không còn cột nào chưa khai thác</b> trong <span class="mono">orders.parquet</span>/<span class="mono">customer_daily.parquet</span>.</li>
+      <li>Pipeline giờ <b>reproducible bit-exact trên cùng máy</b>; đổi kiến trúc <span class="mono">is_post_dispatch</span> là thay đổi an toàn về thiết kế lẫn explainability.</li>
+    </ul>
+    <div class="note good"><b>Mốc mới nhất (kiến trúc post-dispatch-only, 19 feature)</b>: ROC-AUC 0,7506 (Stacking) / Cancel PR-AUC 0,2685 (LightGBM baseline) — dùng làm điểm xuất phát cho Tuần 3.</div>
+  </section>
+
+  <footer>
+    Rider Acceptance Prediction · Tuần 2 · nguồn: <code>report.md</code>, <code>reports/part1_shap.md</code>, <code>reports/part2_shap.md</code> ·
+    tiếp theo: <a href="tuan-3.html">Báo cáo Tuần 3 →</a>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script>
+  document.querySelectorAll('.katex-formula').forEach(function (el) {
+    try {
+      katex.render(el.dataset.tex, el, { throwOnError: false, displayMode: el.dataset.display === '1' });
+    } catch (e) { el.textContent = el.dataset.tex; }
+  });
+</script>
+</body>
+</html>

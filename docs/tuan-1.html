@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo Tuần 1 — Rider Acceptance Prediction</title>
+<meta name="description" content="Tuần 1: tái lập baseline LightGBM 14-feature và đóng băng làm mốc so sánh (ROC-AUC post-dispatch 0,7267) cho toàn bộ 6 tuần.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;650&family=IBM+Plex+Serif:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<nav class="sitenav"><div class="sitenav-inner">
+  <a class="sitenav-link" href="index.html">Kiến trúc FT-Transformer</a>
+  <a class="sitenav-link" href="gioi-thieu.html">Bài toán</a>
+  <a class="sitenav-link active" href="tuan-1.html">Tuần 1</a>
+  <a class="sitenav-link" href="tuan-2.html">Tuần 2</a>
+  <a class="sitenav-link" href="tuan-3.html">Tuần 3</a>
+</div></nav>
+<div class="wrap wrap-top wrap-rest">
+
+  <header class="page">
+    <span class="eyebrow">Rider Acceptance Prediction · Tuần 1</span>
+    <h1>Tái lập baseline &amp; thiết lập mốc so sánh</h1>
+    <p class="subtitle">Tuần 1 (27/07–02/08/2026) không nhằm cải thiện model — mục tiêu duy nhất là tái lập baseline chính xác và đóng băng làm <b>frozen benchmark</b> cho toàn bộ 6 tuần.</p>
+    <table class="meta-table">
+      <tr><td class="k">Dự án</td><td>Rider Acceptance (Matching &amp; Dispatch)</td><td class="k">Giai đoạn</td><td>Tuần 1 · 27/07–02/08/2026</td></tr>
+      <tr><td class="k">Mục tiêu W1</td><td>Dựng mốc benchmark bất biến</td><td class="k">Trạng thái</td><td><span class="tag ok">✓ Hoàn thành (DoD đạt)</span></td></tr>
+    </table>
+  </header>
+
+  <section class="block" id="muc-tieu">
+    <h2><span class="num">1</span>Mục tiêu tuần</h2>
+    <p>Tuần 1 <b>không nhằm cải thiện model</b>. Mục tiêu duy nhất là tái lập baseline một cách chính xác và đóng băng nó làm <b>mốc so sánh (frozen benchmark)</b> cho toàn bộ 6 tuần: mọi thay đổi ở các tuần sau đều đo ngược về con số tuần này. Kèm theo là một bộ chỉ số đánh giá dùng chung và chẩn đoán sơ bộ điểm mạnh/yếu của baseline.</p>
+  </section>
+
+  <section class="block" id="setup">
+    <h2><span class="num">2</span>Thiết lập bài toán &amp; dữ liệu</h2>
+    <div class="formula-card">
+      <div class="label">Bài toán</div>
+      <div class="katex-formula" data-display="1" data-tex="P(\text{rider accept}) = 1 - P(\text{rider cancel})"></div>
+      <div class="note">Ở mức cuốc (khoá theo <span class="mono">customer_id</span>). Nhãn từ <span class="mono">gold.orders</span>: y=1 nếu COMPLETED, y=0 nếu CANCELLED với <span class="mono">cancel_by=CUSTOMER</span> (loại cuốc huỷ bởi tài xế/hệ thống — không phản ánh ý chí khách). 1 model combined phục vụ cả pre-dispatch và post-dispatch, phân biệt bằng cờ <span class="mono">is_post_dispatch</span>.</div>
+    </div>
+    <p><b>Dữ liệu.</b> Hà Nội, cửa sổ 06–13/07/2026, mẫu 2% số cuốc; PII băm SHA-256 tại nguồn. Chia train/test <b>theo thời gian</b> (không random): train 06–12/07, test 13/07. Baseline dùng <b>14 feature</b> gồm thuộc tính cuốc, thời gian, và lịch sử huỷ của khách tính point-in-time trong cửa sổ [D−30, D−1] (dừng ở D−1 để tránh rò rỉ).</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th></th><th class="num">Train (06–12/07)</th><th class="num">Test (13/07)</th><th class="num">— trong đó post-dispatch</th></tr>
+        <tr><td>Số cuốc</td><td class="num">65.765</td><td class="num">9.347</td><td class="num">8.609</td></tr>
+        <tr><td>Tỉ lệ accept (nền)</td><td class="num">0,8107</td><td class="num">0,8363</td><td class="num">0,9080</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="block" id="ket-qua">
+    <h2><span class="num">3</span>Kết quả baseline</h2>
+    <p class="intro">Model: LightGBM (binary, 14 feature, dừng ở vòng 127).</p>
+    <div class="stat-grid">
+      <div class="stat-card win"><div class="stat-label">ROC-AUC (post-dispatch)</div><div class="stat-value">0,7267</div><div class="stat-delta">← con số cần nhìn</div></div>
+      <div class="stat-card"><div class="stat-label">ROC-AUC (toàn bộ)</div><div class="stat-value">0,8585</div><div class="stat-delta">bị thổi phồng — xem mục 4</div></div>
+      <div class="stat-card"><div class="stat-label">Brier Score</div><div class="stat-value">0,0716</div></div>
+      <div class="stat-card"><div class="stat-label">ECE (10 bins)</div><div class="stat-value">0,0055</div></div>
+    </div>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Chỉ số</th><th class="num">Train</th><th class="num">Test</th></tr>
+        <tr><td>ROC-AUC (toàn bộ)</td><td class="num">0,8933</td><td class="num">0,8585</td></tr>
+        <tr class="win"><td>ROC-AUC (post-dispatch)</td><td class="num">—</td><td class="num">0,7267</td></tr>
+        <tr><td>PR-AUC</td><td class="num">0,9670</td><td class="num">0,9612</td></tr>
+        <tr><td>Log Loss</td><td class="num">0,2513</td><td class="num">0,2548</td></tr>
+        <tr><td>Brier Score</td><td class="num">0,0723</td><td class="num">0,0716</td></tr>
+        <tr><td>ECE (10 quantile bins)</td><td class="num">—</td><td class="num">0,0055</td></tr>
+        <tr><td>ECE ở đuôi (P &gt; 0,8)</td><td class="num">—</td><td class="num">0,0015</td></tr>
+      </table>
+    </div>
+    <h3>Mốc tham chiếu ROC-AUC</h3>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Mốc tham chiếu</th><th class="num">ROC-AUC</th></tr>
+        <tr><td>Đoán hằng số (tỉ lệ nền)</td><td class="num">0,5000</td></tr>
+        <tr><td>Chỉ dùng lịch sử huỷ của khách (<span class="mono">cust_cancel_rate_30d</span>)</td><td class="num">0,6140</td></tr>
+        <tr><td>Baseline đầy đủ — toàn bộ</td><td class="num">0,8585</td></tr>
+        <tr class="win"><td>Baseline đầy đủ — post-dispatch</td><td class="num">0,7267</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="block" id="chan-doan">
+    <h2><span class="num">4</span>Chẩn đoán nhanh</h2>
+    <ul>
+      <li><b>Con số cần nhìn là 0,7267, không phải 0,8585.</b> Cờ <span class="mono">is_post_dispatch</span> chi phối độ quan trọng và thổi phồng AUC tổng: cuốc chưa gán tài xế gần như luôn là cuốc khách đã huỷ (accept buộc phải qua bước gán). Đây là biến phân tầng chứ không phải biến dự đoán dùng được ở thời điểm quyết định thật — các tuần sau báo cáo trên nhóm post-dispatch.</li>
+      <li><b>Hiệu chuẩn đã tốt sẵn</b> (ECE = 0,0055; đuôi = 0,0015): đường reliability bám sát đường chéo. Dư địa cải thiện Brier/ECE do đó hẹp.</li>
+      <li><b>Lịch sử hành vi khách là tín hiệu có nghĩa nhất</b> sau biến phân tầng: riêng <span class="mono">cust_cancel_rate_30d</span> đã đạt AUC 0,614. Hướng mở rộng feature nên tập trung mô tả khách (đa cửa sổ lịch sử, tần suất, recency) hơn là thuộc tính cuốc.</li>
+    </ul>
+    <p class="note">Độ quan trọng feature (gain), xếp hạng: <span class="mono">is_post_dispatch</span> áp đảo (gấp hàng chục lần), sau đó tới <span class="mono">eta_seconds</span>, <span class="mono">cust_cancel_rate_30d</span>, <span class="mono">cust_orders_30d</span>, <span class="mono">vertical_name</span>, <span class="mono">re_dispatch_counts</span> — khớp với phát hiện "lịch sử khách hàng" ở trên.</p>
+  </section>
+
+  <section class="block" id="ket-luan">
+    <h2><span class="num">5</span>Kết luận &amp; kế hoạch Tuần 2</h2>
+    <p>Baseline đã được tái lập ổn định và đóng băng làm mốc chuẩn; bộ chỉ số đánh giá dùng chung đã sẵn sàng. Hai rủi ro phương pháp đã được nhận diện và kiểm soát ngay từ Tuần 1:</p>
+    <ul>
+      <li><b>Rò rỉ nhãn qua cửa sổ lịch sử</b> — đã chặn bằng ràng buộc [D−30, D−1] và assert tự động.</li>
+      <li><b>Chỉ số tổng bị thổi bởi biến phân tầng</b> — đã tách báo cáo theo pha (post-dispatch riêng).</li>
+    </ul>
+    <p><b>Tuần 2</b> chuyển sang chẩn đoán sâu: phân tích lỗi theo phân khúc (khách mới, giờ cao điểm, ETA dài), reliability theo bin, chốt bộ lọc dữ liệu và định nghĩa nhãn với mentor, và bước cải thiện đầu tiên — mở rộng cửa sổ huấn luyện.</p>
+    <div class="note good"><b>Baseline đóng băng:</b> ROC-AUC 0,7267 (post-dispatch) · Brier 0,0716 · ECE 0,0055 — mốc so sánh cho toàn bộ 6 tuần.</div>
+  </section>
+
+  <footer>
+    Rider Acceptance Prediction · Tuần 1 · nguồn: <code>W1__Báo_cáo_kết_quả.pdf</code> ·
+    tiếp theo: <a href="tuan-2.html">Báo cáo Tuần 2 →</a>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script>
+  document.querySelectorAll('.katex-formula').forEach(function (el) {
+    try {
+      katex.render(el.dataset.tex, el, { throwOnError: false, displayMode: el.dataset.display === '1' });
+    } catch (e) { el.textContent = el.dataset.tex; }
+  });
+</script>
+</body>
+</html>

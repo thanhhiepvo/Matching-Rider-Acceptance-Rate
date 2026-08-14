@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giới thiệu bài toán — Rider Acceptance Prediction</title>
+<meta name="description" content="Giới thiệu bài toán Matching Rider Acceptance Rate — dự đoán khách hàng huỷ chuyến, luồng nghiệp vụ, cách tiếp cận ML và baseline ban đầu.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;650&family=IBM+Plex+Serif:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<nav class="sitenav"><div class="sitenav-inner">
+  <a class="sitenav-link" href="index.html">Kiến trúc FT-Transformer</a>
+  <a class="sitenav-link active" href="gioi-thieu.html">Bài toán</a>
+  <a class="sitenav-link" href="tuan-1.html">Tuần 1</a>
+  <a class="sitenav-link" href="tuan-2.html">Tuần 2</a>
+  <a class="sitenav-link" href="tuan-3.html">Tuần 3</a>
+</div></nav>
+<div class="wrap wrap-top wrap-rest">
+
+  <header class="page">
+    <span class="eyebrow">Rider Acceptance Prediction · Bài toán</span>
+    <h1>Dự đoán khách huỷ chuyến sau khi tài xế đã nhận</h1>
+    <p class="subtitle">Bài toán, luồng nghiệp vụ, cách tiếp cận Machine Learning và baseline gốc ban đầu của dự án Matching Rider Acceptance Rate.</p>
+  </header>
+
+  <section class="block" id="muc-tieu">
+    <h2><span class="num">0</span>Mục tiêu bài toán</h2>
+    <p class="intro">Trong quy trình đặt xe, sau khi khách hàng tạo booking và tài xế nhận chuyến, ứng dụng hiển thị thông tin tài xế, biển số xe, vị trí và thời gian dự kiến đến đón. Tại thời điểm này, khách hàng có thể tiếp tục chờ hoặc huỷ chuyến.</p>
+    <p><b>Matching Rider Acceptance Rate</b> dùng Machine Learning để dự đoán khả năng khách hàng tiếp tục chuyến sau khi đã có tài xế nhận. Đây là bài toán dự đoán <b>hành vi của khách hàng</b> — không phải dự đoán tài xế có nhận chuyến hay không.</p>
+
+    <div class="flow">
+      <div class="flow-step"><div class="flow-title">Khách đặt chuyến</div><div class="flow-sub">Tạo booking</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="flow-title">Hệ thống tìm tài xế</div><div class="flow-sub">Matching / dispatch</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="flow-title">Tài xế nhận chuyến</div><div class="flow-sub">Driver acceptance</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step highlight"><div class="flow-title">Khách xem thông tin chuyến</div><div class="flow-sub">Model chạy ở ĐÂY — trước khi đón khách</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="flow-title">Tiếp tục hoặc huỷ</div><div class="flow-sub">Output model dự đoán</div></div>
+    </div>
+    <p>Mô hình được sử dụng tại giai đoạn <b>sau khi tài xế nhận chuyến và trước khi đón khách</b>. Output là xác suất khách tiếp tục chuyến, hoặc phần bù của nó — rủi ro khách huỷ.</p>
+  </section>
+
+  <section class="block" id="y-nghia">
+    <h2><span class="num">1</span>Ý nghĩa của bài toán</h2>
+    <p>Khách hàng huỷ sau khi tài xế đã nhận chuyến làm tài xế mất thời gian di chuyển, tài nguyên bị khoá tạm thời và hiệu quả matching giảm. Nền tảng cũng mất cơ hội phục vụ booking khác, trong khi trải nghiệm của cả khách hàng và tài xế đều bị ảnh hưởng.</p>
+    <div class="note">Nếu phát hiện sớm booking có nguy cơ huỷ cao, hệ thống có thể ưu tiên tài xế đến nhanh hơn, cải thiện thông tin hiển thị, hoặc điều chỉnh chiến lược matching. Giá trị của mô hình không chỉ nằm ở performance, mà còn ở khả năng hỗ trợ quyết định vận hành.</div>
+  </section>
+
+  <section class="block" id="hai-pha">
+    <h2><span class="num">2</span>Hai pha dự đoán trong pipeline dispatch</h2>
+    <p class="intro">Rider Behavior model được gọi tại 2 thời điểm khác nhau trong 4-bước pipeline dispatch — dự án này (từ Tuần 1 trở đi) tập trung vào <b>Post-Dispatch</b>, pha khó và có giá trị nghiệp vụ cao hơn.</p>
+
+    <div class="flow">
+      <div class="flow-step highlight"><div class="flow-title">Stage 1 — Pre-Dispatch</div><div class="flow-sub">"Rider có huỷ, trước lúc ghép chuyến?"<br>Tín hiệu chính: thời gian chờ/ETA dài</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="flow-title">Stage 2 — Matching</div><div class="flow-sub">Thuật toán ghép cặp</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="flow-title">Stage 3 — Driver Acceptance</div><div class="flow-sub">Tài xế có nhận chuyến?</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step highlight"><div class="flow-title">Stage 4 — Post-Dispatch</div><div class="flow-sub">"Rider có huỷ sau khi thấy tài xế?"<br>Tín hiệu chính: thông tin tài xế, cước phí, ETA</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Hạng mục</th><th>Phase 1 — Pre-Dispatch</th><th>Phase 4 — Post-Dispatch</th></tr>
+        <tr><td>Thời điểm</td><td>Trước khi có ghép chuyến</td><td>Sau khi tài xế được dispatch</td></tr>
+        <tr><td>Câu hỏi</td><td>Rider có huỷ đơn trong lúc chờ tài xế?</td><td>Rider có huỷ sau khi thấy thông tin tài xế / ETA?</td></tr>
+        <tr><td>Tín hiệu chính</td><td>Thời gian chờ / ETA dài</td><td>Thông tin tài xế, cước phí, ETA đến điểm đón</td></tr>
+      </table>
+    </div>
+    <p class="note">Dự án này (Tuần 1 trở đi) tập trung hoàn toàn vào <b>post-dispatch</b> — pha khó hơn, vì đây là điểm mô hình có thể thực sự ảnh hưởng tới quyết định vận hành trước khi khách rời đi.</p>
+  </section>
+
+  <section class="block" id="cach-tiep-can">
+    <h2><span class="num">3</span>Cách tiếp cận ML</h2>
+    <p class="intro">Hướng chính là <b>binary classification</b>.</p>
+    <div class="formula-card">
+      <div class="label">Bài toán</div>
+      <div class="katex-formula" data-display="1" data-tex="P(\text{accept} \mid \text{trip context}) \quad \text{hoặc} \quad \text{cancel\_risk} = 1 - P(\text{accept})"></div>
+    </div>
+    <ul>
+      <li><b>Input</b>: bối cảnh có sẵn tại thời điểm tài xế đã nhận chuyến.</li>
+      <li><b>Output</b>: xác suất khách hàng tiếp tục chuyến.</li>
+    </ul>
+    <p>LightGBM là baseline ban đầu (AUC ≈ 0,70). Một số hướng mở rộng có thể nghiên cứu sau baseline, chỉ nên triển khai khi bài toán classification cơ bản đã được định nghĩa và đánh giá rõ ràng:</p>
+    <ul>
+      <li><b>Ranking</b> — xếp hạng booking theo nguy cơ huỷ để ưu tiên xử lý.</li>
+      <li><b>Survival analysis</b> — dự đoán nguy cơ huỷ theo thời gian chờ.</li>
+      <li><b>Predict-then-optimize</b> — đưa xác suất huỷ vào thuật toán matching hoặc dispatch.</li>
+    </ul>
+  </section>
+
+  <section class="block" id="huong-nghien-cuu">
+    <h2><span class="num">4</span>Hướng nghiên cứu ban đầu</h2>
+    <div class="formula-card">
+      <div class="label">Bước 1 — Hiểu nghiệp vụ</div>
+      <p style="margin:0">Vẽ lại quy trình từ lúc khách đặt chuyến đến khi được đón. Xác định chính xác thời điểm model chạy, phân biệt rider acceptance với driver acceptance.</p>
+    </div>
+    <div class="formula-card">
+      <div class="label">Bước 2 — Viết problem statement</div>
+      <p style="margin:0">Trả lời 4 câu hỏi: mô hình dự đoán hành vi nào, tại thời điểm nào, output dùng ra sao, tác động kinh doanh kỳ vọng là gì.</p>
+    </div>
+    <div class="formula-card">
+      <div class="label">Bước 3 — Nghiên cứu tài liệu</div>
+      <p style="margin:0">Passenger cancellation, waiting-time uncertainty, hành vi khách hàng trên marketplace hai phía, kết hợp prediction với dispatch optimization.</p>
+    </div>
+    <div class="formula-card">
+      <div class="label">Bước 4 — Chuẩn bị thực nghiệm</div>
+      <p style="margin:0">Định nghĩa label, kiểm tra chất lượng dữ liệu, xây baseline, so sánh model, đánh giá khả năng cải thiện so với AUC 0,70 — bắt đầu ở Tuần 1.</p>
+    </div>
+  </section>
+
+  <section class="block" id="baseline-goc">
+    <h2><span class="num">5</span>Baseline ban đầu (trước Tuần 1)</h2>
+    <p class="intro">Trước khi dự án này bắt đầu tái lập/mở rộng, hệ thống đã có 1 baseline tối thiểu — 6 feature, dùng chung cho Bike và Car.</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>#</th><th>Feature</th><th>Loại</th><th>Mô tả</th></tr>
+        <tr><td class="num">1</td><td class="mono">estimate_time_arrival</td><td>Số</td><td>ETA (giây) từ tài xế đến điểm đón</td></tr>
+        <tr><td class="num">2</td><td class="mono">estimate_distance_arrival</td><td>Số</td><td>Khoảng cách (km) từ tài xế đến điểm đón</td></tr>
+        <tr><td class="num">3</td><td class="mono">total_fee</td><td>Số</td><td>Tổng cước phí hiển thị cho rider (VNĐ)</td></tr>
+        <tr><td class="num">4</td><td class="mono">dispatch_mode</td><td>Phân loại</td><td>Loại dispatch</td></tr>
+        <tr><td class="num">5</td><td class="mono">driver_contract_type</td><td>Phân loại</td><td>Loại hợp đồng tài xế</td></tr>
+        <tr><td class="num">6</td><td class="mono">service_type</td><td>Phân loại</td><td>Loại dịch vụ</td></tr>
+      </table>
+    </div>
+    <p>Khi model ML chưa sẵn sàng, hệ thống fallback về rule theo ETA:</p>
+    <div class="formula-card">
+      <div class="label">Fallback rule</div>
+      <div class="katex-formula" data-display="1" data-tex="P(\text{stay}) = \text{base\_accept\_rate} - \text{ETA\_penalty}"></div>
+      <div class="note">với <span class="mono">base_accept_rate ≈ 0,92</span>, <span class="mono">ETA_penalty = max(0, (ETA − 600s)/100) × 0,02</span> mỗi 100s vượt ngưỡng 10 phút.</div>
+    </div>
+    <p class="note">Đây là <b>điểm xuất phát</b> của dự án — Tuần 1 tái lập baseline này chính xác trên dữ liệu thật và đóng băng làm mốc so sánh, trước khi mở rộng feature set ở các tuần sau. Xem chi tiết ở trang <a href="tuan-1.html">Báo cáo Tuần 1</a>.</p>
+  </section>
+
+  <section class="block" id="tai-lieu">
+    <h2><span class="num">6</span>Tài liệu tham khảo</h2>
+    <ul class="ref-list">
+      <li><a href="https://doi.org/10.1016/j.trpro.2019.05.044" target="_blank" rel="noopener">Customer behavioural modelling of order cancellation in coupled ride-sourcing and taxi markets</a>
+        <div class="ref-desc">Nghiên cứu hành vi huỷ order và ảnh hưởng của thời gian chờ.</div></li>
+      <li><a href="https://doi.org/10.1016/j.tre.2023.103107" target="_blank" rel="noopener">Optimal cancellation penalty for competing ride-sourcing platforms under waiting time uncertainty</a>
+        <div class="ref-desc">Phân tích quyết định huỷ khi thời gian chờ không chắc chắn và khách có lựa chọn thay thế.</div></li>
+      <li><a href="https://doi.org/10.12011/SETP2024-0401" target="_blank" rel="noopener">Dispatching optimization in ride-sharing platform based on the prediction of passenger's order cancellation</a>
+        <div class="ref-desc">Liên hệ trực tiếp giữa dự đoán passenger cancellation và tối ưu dispatch.</div></li>
+      <li><a href="https://doi.org/10.1145/3097983.3098138" target="_blank" rel="noopener">A Taxi Order Dispatch Model based on Combinatorial Optimization</a>
+        <div class="ref-desc">Giúp hiểu matching/dispatch là bài toán tối ưu toàn hệ thống.</div></li>
+      <li><a href="https://doi.org/10.1287/mksc.2023.0561" target="_blank" rel="noopener">The Design of Centralized Matching Systems on Two-Sided Platforms</a>
+        <div class="ref-desc">Góc nhìn về matching giữa khách hàng và tài xế trong marketplace hai phía.</div></li>
+      <li><a href="https://lightgbm.readthedocs.io/" target="_blank" rel="noopener">LightGBM Documentation</a></li>
+    </ul>
+    <div class="kw-row">
+      <span class="kw">passenger cancellation prediction ride-hailing</span>
+      <span class="kw">waiting time uncertainty ride-hailing</span>
+      <span class="kw">rider post-assignment cancellation</span>
+      <span class="kw">ride-hailing dispatch optimization</span>
+      <span class="kw">predict then optimize ride-hailing</span>
+    </div>
+  </section>
+
+  <footer>
+    Rider Acceptance Prediction · nguồn: <code>matching_rider_acceptance_rate_condensed.md</code>, <code>rider_cancellation_baseline_model.md</code> ·
+    tiếp theo: <a href="tuan-1.html">Báo cáo Tuần 1 →</a>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script>
+  document.querySelectorAll('.katex-formula').forEach(function (el) {
+    try {
+      katex.render(el.dataset.tex, el, { throwOnError: false, displayMode: el.dataset.display === '1' });
+    } catch (e) { el.textContent = el.dataset.tex; }
+  });
+</script>
+</body>
+</html>

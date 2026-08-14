@@ -8,123 +8,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;650&family=IBM+Plex+Serif:wght@600;700&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-<style>
-  :root {
-    color-scheme: light;
-    --page: #f5f6f4;
-    --surface: #ffffff;
-    --surface-2: #f0f1ee;
-    --ink: #14181a;
-    --ink-soft: #4b5457;
-    --ink-muted: #838d90;
-    --border: rgba(20,24,26,0.13);
-    --border-soft: rgba(20,24,26,0.08);
-    --accent: #0f7d78;
-    --accent-ink: #063f3c;
-    --accent-soft: #e2f2f0;
-    --num: #6b8f5e;
-    --cat: #4a7fb5;
-    --shadow: 0 1px 2px rgba(20,24,26,0.04), 0 8px 24px -12px rgba(20,24,26,0.12);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --page: #101314; --surface: #181c1d; --surface-2: #1f2425;
-      --ink: #f2f4f3; --ink-soft: #c3cac9; --ink-muted: #8a9494;
-      --border: rgba(255,255,255,0.13); --border-soft: rgba(255,255,255,0.08);
-      --accent: #3ec2ba; --accent-ink: #bdf0ea; --accent-soft: #12332f;
-      --num: #9dc98c; --cat: #8fb8e6;
-      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.55);
-    }
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --page: #101314; --surface: #181c1d; --surface-2: #1f2425;
-    --ink: #f2f4f3; --ink-soft: #c3cac9; --ink-muted: #8a9494;
-    --border: rgba(255,255,255,0.13); --border-soft: rgba(255,255,255,0.08);
-    --accent: #3ec2ba; --accent-ink: #bdf0ea; --accent-soft: #12332f;
-    --num: #9dc98c; --cat: #8fb8e6;
-    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.55);
-  }
-
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    background: var(--page); color: var(--ink);
-    font-family: "IBM Plex Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 48px 24px 96px; }
-  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
-
-  header.page { margin-bottom: 36px; }
-  .eyebrow {
-    font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase;
-    color: var(--accent-ink); background: var(--accent-soft);
-    display: inline-flex; padding: 4px 10px; border-radius: 4px;
-  }
-  h1 { font-family: "IBM Plex Serif", Georgia, serif; font-size: 32px; font-weight: 700; margin: 14px 0 8px; text-wrap: balance; }
-  .subtitle { font-size: 15.5px; color: var(--ink-soft); max-width: 62ch; margin: 0; }
-
-  figure.diagram { margin: 36px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-           box-shadow: var(--shadow); padding: 18px; overflow-x: auto; }
-  figure.diagram img { display: block; width: 100%; height: auto; min-width: 760px; }
-  figure.diagram figcaption { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
-
-  section.block { margin: 56px 0; }
-  section.block h2 {
-    font-family: "IBM Plex Serif", Georgia, serif; font-size: 22px; font-weight: 700;
-    margin: 0 0 6px; display: flex; align-items: baseline; gap: 10px;
-  }
-  section.block h2 .num {
-    font-family: "IBM Plex Mono", monospace; font-size: 14px; color: var(--accent-ink);
-    background: var(--accent-soft); padding: 2px 8px; border-radius: 100px; font-weight: 600;
-  }
-  section.block > .intro { color: var(--ink-soft); font-size: 15px; max-width: 68ch; margin: 10px 0 20px; }
-
-  .formula-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: 18px 22px; box-shadow: var(--shadow); margin: 14px 0;
-  }
-  .formula-card .label {
-    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
-    color: var(--ink-muted); margin-bottom: 10px;
-  }
-  .formula-card .katex-display { margin: 4px 0; overflow-x: auto; overflow-y: hidden; }
-  .note {
-    font-size: 13.5px; color: var(--ink-soft); background: var(--surface-2); border-radius: 8px;
-    padding: 10px 14px; margin-top: 10px; border-left: 3px solid var(--accent);
-  }
-  .note b { color: var(--ink); }
-
-  .feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }
-  @media (max-width: 640px) { .feat-grid { grid-template-columns: repeat(2, 1fr); } }
-  .feat-chip {
-    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; padding: 7px 10px; border-radius: 6px;
-    background: var(--surface); border: 1px solid var(--border-soft);
-  }
-  .feat-chip.num { border-left: 3px solid var(--num); }
-  .feat-chip.cat { border-left: 3px solid var(--cat); }
-  .feat-group-label {
-    font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted);
-    margin: 18px 0 8px; display: flex; align-items: center; gap: 8px;
-  }
-  .feat-group-label .dot { width: 8px; height: 8px; border-radius: 50%; }
-  .feat-group-label .dot.num { background: var(--num); }
-  .feat-group-label .dot.cat { background: var(--cat); }
-
-  table.spec { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 14px 0; }
-  table.spec th, table.spec td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border-soft); }
-  table.spec th { color: var(--ink-muted); font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; }
-  table.spec td.val { font-family: "IBM Plex Mono", monospace; text-align: right; }
-
-  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--ink-muted); }
-  footer code { font-family: "IBM Plex Mono", monospace; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
-</style>
+<link rel="stylesheet" href="shared.css">
 </head>
 <body>
-<div class="wrap">
+<nav class="sitenav"><div class="sitenav-inner">
+  <a class="sitenav-link active" href="index.html">Kiến trúc FT-Transformer</a>
+  <a class="sitenav-link" href="gioi-thieu.html">Bài toán</a>
+  <a class="sitenav-link" href="tuan-1.html">Tuần 1</a>
+  <a class="sitenav-link" href="tuan-2.html">Tuần 2</a>
+  <a class="sitenav-link" href="tuan-3.html">Tuần 3</a>
+</div></nav>
+<div class="wrap wrap-top">
 
   <header class="page">
     <span class="eyebrow">Rider Acceptance Prediction · FT-Transformer</span>
@@ -132,41 +26,411 @@
     <p class="subtitle">Feature Tokenizer + Transformer Encoder cho bài toán dự đoán khách hủy chuyến sau khi tài xế đã nhận (post-dispatch). Dựa trên FT-Transformer (Gorishniy et al., NeurIPS 2021), điều chỉnh lại vài chi tiết cho phù hợp dữ liệu dự án — xem ghi chú ở mỗi bước.</p>
   </header>
 
+</div>
+
+<div class="diagram-wrap">
   <figure class="diagram">
     <img src="ft-transformer-architecture.png" alt="Sơ đồ kiến trúc FT-Transformer: Input Features → Feature Tokenizer → Stack of embedding vectors → Encoder Layer (×N) → Predict [CLS]">
     <figcaption>Input Features (17 numeric + 3 categorical) → Feature Tokenizer → chuỗi embedding + [CLS] → Encoder Layer ×N → lấy [CLS] cuối → dự đoán.</figcaption>
   </figure>
+</div>
+
+<div class="wrap wrap-rest">
 
   <section class="block" id="input">
     <h2><span class="num">0</span>Input Features</h2>
-    <p class="intro">20 feature/đơn hàng — 17 numeric đi qua phép biến đổi tuyến tính riêng từng feature, 3 categorical đi qua bảng embedding riêng từng feature.</p>
+    <p class="intro">20 feature/đơn hàng — 17 numeric đi qua phép biến đổi tuyến tính riêng từng feature, 3 categorical đi qua bảng embedding riêng từng feature. Di chuột (hoặc bấm trên di động) vào từng ô để xem thống kê thật.</p>
 
     <div class="feat-group-label"><span class="dot num"></span>17 numeric features</div>
     <div class="feat-grid">
-      <div class="feat-chip num">total_fee</div>
-      <div class="feat-chip num">trip_distance_km</div>
-      <div class="feat-chip num">fee_per_km</div>
-      <div class="feat-chip num">dist_center_km</div>
-      <div class="feat-chip num">dist_airport_km</div>
-      <div class="feat-chip num">dist_hotspot_km</div>
-      <div class="feat-chip num">surge_multiplier</div>
-      <div class="feat-chip num">hour_of_day</div>
-      <div class="feat-chip num">is_weekend</div>
-      <div class="feat-chip num">is_schedule_order</div>
-      <div class="feat-chip num">cust_cancel_rate_30d</div>
-      <div class="feat-chip num">cust_orders_30d</div>
-      <div class="feat-chip num">cust_completion_rate_30d</div>
-      <div class="feat-chip num">is_rainy_3h</div>
-      <div class="feat-chip num">eta_seconds</div>
-      <div class="feat-chip num">re_dispatch_counts</div>
-      <div class="feat-chip num">pickup_distance_km</div>
+      <div class="feat-chip num has-pop" tabindex="0">total_fee
+        <div class="pop pop-num">
+          <div class="pop-title">total_fee <span class="pop-unit">(VNĐ)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="17.4" y="6" width="54.7" height="22" class="box"/>
+            <line x1="36.6" y1="6" x2="36.6" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>13.000</b></div>
+            <div><span>P25</span><b>33.000</b></div>
+            <div><span>Median</span><b>53.000</b></div>
+            <div><span>P75</span><b>90.000</b></div>
+            <div><span>Max</span><b>28.375.000</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">trip_distance_km
+        <div class="pop pop-num">
+          <div class="pop-title">trip_distance_km <span class="pop-unit">(km)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="21.5" y="6" width="61.3" height="22" class="box"/>
+            <line x1="45.9" y1="6" x2="45.9" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>2,9</b></div>
+            <div><span>Median</span><b>5,32</b></div>
+            <div><span>P75</span><b>8,98</b></div>
+            <div><span>Max</span><b>1.667,53</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">fee_per_km
+        <div class="pop pop-num">
+          <div class="pop-title">fee_per_km <span class="pop-unit">(VNĐ/km)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="17.0" y="6" width="50.5" height="22" class="box"/>
+            <line x1="42.5" y1="6" x2="42.5" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>1.153,846</b></div>
+            <div><span>P25</span><b>7.142,857</b></div>
+            <div><span>Median</span><b>10.822,511</b></div>
+            <div><span>P75</span><b>14.442,916</b></div>
+            <div><span>Max</span><b>9.250.000</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">dist_center_km
+        <div class="pop pop-num">
+          <div class="pop-title">dist_center_km <span class="pop-unit">(km)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="38.6" y="6" width="63.5" height="22" class="box"/>
+            <line x1="68.0" y1="6" x2="68.0" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0,027</b></div>
+            <div><span>P25</span><b>4,156</b></div>
+            <div><span>Median</span><b>6,633</b></div>
+            <div><span>P75</span><b>9,496</b></div>
+            <div><span>Max</span><b>63,444</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">dist_airport_km
+        <div class="pop pop-num">
+          <div class="pop-title">dist_airport_km <span class="pop-unit">(km)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="67.1" y="6" width="70.9" height="22" class="box"/>
+            <line x1="98.7" y1="6" x2="98.7" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0,461</b></div>
+            <div><span>P25</span><b>20,855</b></div>
+            <div><span>Median</span><b>23,114</b></div>
+            <div><span>P75</span><b>25,93</b></div>
+            <div><span>Max</span><b>69,577</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">dist_hotspot_km
+        <div class="pop pop-num">
+          <div class="pop-title">dist_hotspot_km <span class="pop-unit">(km)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="31.4" y="6" width="73.6" height="22" class="box"/>
+            <line x1="61.9" y1="6" x2="61.9" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0,009</b></div>
+            <div><span>P25</span><b>1,31</b></div>
+            <div><span>Median</span><b>2,126</b></div>
+            <div><span>P75</span><b>3,282</b></div>
+            <div><span>Max</span><b>29,256</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">surge_multiplier
+        <div class="pop pop-num">
+          <div class="pop-title">surge_multiplier <span class="pop-unit">(×)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="43.1" y="6" width="39.1" height="22" class="box"/>
+            <line x1="46.7" y1="6" x2="46.7" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0,85</b></div>
+            <div><span>P25</span><b>0,99</b></div>
+            <div><span>Median</span><b>1</b></div>
+            <div><span>P75</span><b>1,1</b></div>
+            <div><span>Max</span><b>3</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">hour_of_day
+        <div class="pop pop-num">
+          <div class="pop-title">hour_of_day <span class="pop-unit">(giờ)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="55.2" y="6" width="102.4" height="22" class="box"/>
+            <line x1="106.4" y1="6" x2="106.4" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>10</b></div>
+            <div><span>Median</span><b>14</b></div>
+            <div><span>P75</span><b>18</b></div>
+            <div><span>Max</span><b>23</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">is_weekend
+        <div class="pop pop-num">
+          <div class="pop-title">is_weekend <span class="pop-unit">(0/1)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="4.0" y="6" width="192.0" height="22" class="box"/>
+            <line x1="4.0" y1="6" x2="4.0" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>0</b></div>
+            <div><span>Median</span><b>0</b></div>
+            <div><span>P75</span><b>1</b></div>
+            <div><span>Max</span><b>1</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">is_schedule_order
+        <div class="pop pop-num">
+          <div class="pop-title">is_schedule_order <span class="pop-unit">(0/1)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="4.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <rect x="4.0" y="6" width="1.5" height="22" class="box"/>
+            <line x1="4.0" y1="6" x2="4.0" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>0</b></div>
+            <div><span>Median</span><b>0</b></div>
+            <div><span>P75</span><b>0</b></div>
+            <div><span>Max</span><b>1</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">cust_cancel_rate_30d
+        <div class="pop pop-num">
+          <div class="pop-title">cust_cancel_rate_30d <span class="pop-unit">(tỉ lệ)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="4.0" y="6" width="85.3" height="22" class="box"/>
+            <line x1="42.4" y1="6" x2="42.4" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>0</b></div>
+            <div><span>Median</span><b>0,1</b></div>
+            <div><span>P75</span><b>0,222</b></div>
+            <div><span>Max</span><b>1</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">cust_orders_30d
+        <div class="pop pop-num">
+          <div class="pop-title">cust_orders_30d <span class="pop-unit">(đơn)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="8.8" y="6" width="32.2" height="22" class="box"/>
+            <line x1="18.3" y1="6" x2="18.3" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>1</b></div>
+            <div><span>P25</span><b>5</b></div>
+            <div><span>Median</span><b>13</b></div>
+            <div><span>P75</span><b>32</b></div>
+            <div><span>Max</span><b>530.321</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier — 1 khách có 530.321 đơn/30 ngày, khả năng do lỗi/gộp ID trong dữ liệu thô).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">cust_completion_rate_30d
+        <div class="pop pop-num">
+          <div class="pop-title">cust_completion_rate_30d <span class="pop-unit">(tỉ lệ)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="98.5" y="6" width="97.5" height="22" class="box"/>
+            <line x1="145.4" y1="6" x2="145.4" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>0,714</b></div>
+            <div><span>Median</span><b>0,852</b></div>
+            <div><span>P75</span><b>1</b></div>
+            <div><span>Max</span><b>1</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">is_rainy_3h
+        <div class="pop pop-num">
+          <div class="pop-title">is_rainy_3h <span class="pop-unit">(0/1)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="4.0" y="6" width="192.0" height="22" class="box"/>
+            <line x1="196.0" y1="6" x2="196.0" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>0</b></div>
+            <div><span>Median</span><b>1</b></div>
+            <div><span>P75</span><b>1</b></div>
+            <div><span>Max</span><b>1</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">eta_seconds
+        <div class="pop pop-num">
+          <div class="pop-title">eta_seconds <span class="pop-unit">(giây)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="59.8" y="6" width="71.6" height="22" class="box"/>
+            <line x1="92.6" y1="6" x2="92.6" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0,1</b></div>
+            <div><span>P25</span><b>129,735</b></div>
+            <div><span>Median</span><b>198,266</b></div>
+            <div><span>P75</span><b>279,373</b></div>
+            <div><span>Max</span><b>14.316,3</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">re_dispatch_counts
+        <div class="pop pop-num">
+          <div class="pop-title">re_dispatch_counts <span class="pop-unit">(lần)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="4.0" y="6" width="192.0" height="22" class="box"/>
+            <line x1="196.0" y1="6" x2="196.0" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>2</b></div>
+            <div><span>Median</span><b>10</b></div>
+            <div><span>P75</span><b>10</b></div>
+            <div><span>Max</span><b>20</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
+      <div class="feat-chip num has-pop" tabindex="0">pickup_distance_km
+        <div class="pop pop-num">
+          <div class="pop-title">pickup_distance_km <span class="pop-unit">(km)</span></div>
+          <svg class="boxplot" viewBox="0 0 200 34" preserveAspectRatio="none">
+            <line x1="4.0" y1="17" x2="196.0" y2="17" class="whisker"/>
+            <line x1="4.0" y1="10" x2="4.0" y2="24" class="cap"/>
+            <line x1="196.0" y1="10" x2="196.0" y2="24" class="cap"/>
+            <rect x="31.8" y="6" width="103.7" height="22" class="box"/>
+            <line x1="75.2" y1="6" x2="75.2" y2="28" class="median"/>
+          </svg>
+          <div class="pop-stats">
+            <div><span>Min</span><b>0</b></div>
+            <div><span>P25</span><b>0,338</b></div>
+            <div><span>Median</span><b>0,769</b></div>
+            <div><span>P75</span><b>1,37</b></div>
+            <div><span>Max</span><b>152,666</b></div>
+          </div>
+          <div class="pop-note">Hộp = phân vị 25–75%, râu = phân vị 5–95%. Min/Max là giá trị thật (kể cả outlier).</div>
+        </div>
+      </div>
     </div>
 
     <div class="feat-group-label"><span class="dot cat"></span>3 categorical features</div>
     <div class="feat-grid">
-      <div class="feat-chip cat">travel_mode <span style="color:var(--ink-muted)">(3 giá trị)</span></div>
-      <div class="feat-chip cat">vertical_name <span style="color:var(--ink-muted)">(4 giá trị)</span></div>
-      <div class="feat-chip cat">payment_method <span style="color:var(--ink-muted)">(16 giá trị)</span></div>
+      <div class="feat-chip cat has-pop" tabindex="0">travel_mode <span style="color:var(--ink-muted)">(3 giá trị)</span>
+        <div class="pop pop-cat">
+          <div class="pop-title">travel_mode — phân bố thật trong data</div>
+          <div class="pop-cat-list">
+            <div class="pop-cat-row"><span class="bar" style="width:53.9%"></span><span class="cat-name">motorcycle</span><span class="cat-pct">53,9%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:45.7%"></span><span class="cat-name">car</span><span class="cat-pct">45,7%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.4%"></span><span class="cat-name">truck</span><span class="cat-pct">0,4%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="feat-chip cat has-pop" tabindex="0">vertical_name <span style="color:var(--ink-muted)">(4 giá trị)</span>
+        <div class="pop pop-cat">
+          <div class="pop-title">vertical_name — phân bố thật trong data</div>
+          <div class="pop-cat-list">
+            <div class="pop-cat-row"><span class="bar" style="width:45.7%"></span><span class="cat-name">Taxi</span><span class="cat-pct">45,7%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:38.1%"></span><span class="cat-name">Bike</span><span class="cat-pct">38,1%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:12.8%"></span><span class="cat-name">Express</span><span class="cat-pct">12,8%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:3.4%"></span><span class="cat-name">Food</span><span class="cat-pct">3,4%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="feat-chip cat has-pop" tabindex="0">payment_method <span style="color:var(--ink-muted)">(16 giá trị)</span>
+        <div class="pop pop-cat">
+          <div class="pop-title">payment_method — phân bố thật trong data</div>
+          <div class="pop-cat-list">
+            <div class="pop-cat-row"><span class="bar" style="width:66.3%"></span><span class="cat-name">cash</span><span class="cat-pct">66,3%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:11.2%"></span><span class="cat-name">international_card</span><span class="cat-pct">11,2%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:7.6%"></span><span class="cat-name">momo</span><span class="cat-pct">7,6%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:4.2%"></span><span class="cat-name">partner_pay</span><span class="cat-pct">4,2%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:3.8%"></span><span class="cat-name">shopee_pay</span><span class="cat-pct">3,8%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:3.1%"></span><span class="cat-name">zalo</span><span class="cat-pct">3,1%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:1.9%"></span><span class="cat-name">business_card</span><span class="cat-pct">1,9%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.5%"></span><span class="cat-name">onepay_auto_debit</span><span class="cat-pct">0,5%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.5%"></span><span class="cat-name">viettel_money</span><span class="cat-pct">0,5%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.4%"></span><span class="cat-name">closed_wallet</span><span class="cat-pct">0,4%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.3%"></span><span class="cat-name">physical_business_card</span><span class="cat-pct">0,3%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.1%"></span><span class="cat-name">vsf</span><span class="cat-pct">0,1%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.1%"></span><span class="cat-name">msb_qr</span><span class="cat-pct">0,1%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.0%"></span><span class="cat-name">vnpay_pos</span><span class="cat-pct">0,0%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.0%"></span><span class="cat-name">qr</span><span class="cat-pct">0,0%</span></div>
+            <div class="pop-cat-row"><span class="bar" style="width:0.0%"></span><span class="cat-name">hdb_qr</span><span class="cat-pct">0,0%</span></div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -243,20 +507,22 @@
 
   <section class="block" id="config">
     <h2><span class="num">5</span>Cấu hình thật đang dùng</h2>
-    <p class="intro">Tìm qua Optuna (tối ưu Cancel PR-AUC trên tập valid, 10 trial × 30 epoch/trial) — không chọn tay.</p>
-    <table class="spec">
-      <tr><th>Tham số</th><th>Ký hiệu</th><th class="val">Giá trị</th></tr>
-      <tr><td>Chiều mỗi token</td><td class="mono">d</td><td class="val">64</td></tr>
-      <tr><td>Số head attention</td><td class="mono">n_heads</td><td class="val">2</td></tr>
-      <tr><td>Số lớp encoder</td><td class="mono">N</td><td class="val">2</td></tr>
-      <tr><td>Chiều ẩn Feed-Forward</td><td class="mono">d_ffn</td><td class="val">256</td></tr>
-      <tr><td>Dropout</td><td class="mono">p</td><td class="val">0,189</td></tr>
-      <tr><td>Learning rate</td><td class="mono">η</td><td class="val">1,6 × 10⁻⁴</td></tr>
-      <tr><td>Weight decay</td><td class="mono">λ</td><td class="val">1,38 × 10⁻⁴</td></tr>
-      <tr><td>Batch size</td><td class="mono">—</td><td class="val">1024</td></tr>
-      <tr><td>Optimizer</td><td class="mono">—</td><td class="val">AdamW</td></tr>
-      <tr><td>Loss</td><td class="mono">—</td><td class="val">BCEWithLogitsLoss</td></tr>
-    </table>
+    <p class="intro">Kiến trúc tìm qua Optuna (tối ưu Cancel PR-AUC trên tập valid, 10 trial × 30 epoch/trial, dùng BCEWithLogitsLoss khi search) — không chọn tay. Focal Loss được thêm sau, riêng cho lần train cuối, sau khi thực nghiệm cho thấy nó cải thiện Cancel PR-AUC so với BCE trên đúng kiến trúc này.</p>
+    <div class="spec-wrap">
+      <table class="spec">
+        <tr><th>Tham số</th><th>Ký hiệu</th><th class="val">Giá trị</th></tr>
+        <tr><td>Chiều mỗi token</td><td class="mono">d</td><td class="val">64</td></tr>
+        <tr><td>Số head attention</td><td class="mono">n_heads</td><td class="val">2</td></tr>
+        <tr><td>Số lớp encoder</td><td class="mono">N</td><td class="val">2</td></tr>
+        <tr><td>Chiều ẩn Feed-Forward</td><td class="mono">d_ffn</td><td class="val">256</td></tr>
+        <tr><td>Dropout</td><td class="mono">p</td><td class="val">0,189</td></tr>
+        <tr><td>Learning rate</td><td class="mono">η</td><td class="val">1,6 × 10⁻⁴</td></tr>
+        <tr><td>Weight decay</td><td class="mono">λ</td><td class="val">1,38 × 10⁻⁴</td></tr>
+        <tr><td>Batch size</td><td class="mono">—</td><td class="val">1024</td></tr>
+        <tr><td>Optimizer</td><td class="mono">—</td><td class="val">AdamW</td></tr>
+        <tr><td>Loss</td><td class="mono">—</td><td class="val">Focal Loss (γ=2)</td></tr>
+      </table>
+    </div>
   </section>
 
   <footer>
