@@ -1,4 +1,4 @@
-# Matching Rider Acceptance Rate
+# Matching Rider Cancellation Rate
 
 Rider/customer cancellation prediction project — predicting whether a rider will cancel a trip **after** a driver has already been dispatched (post-dispatch), so the matching/dispatch system can act on that risk before it happens.
 
@@ -7,7 +7,7 @@ This README covers the project's public write-up site (`docs/`), deployed via Gi
 ## Live site
 
 ```
-https://thanhhiepvo.github.io/Matching-Rider-Acceptance-Rate/
+https://thanhhiepvo.github.io/Matching-Rider-Cancellation-Rate/
 ```
 
 The home page is the FT-Transformer architecture deep-dive:

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Giới thiệu bài toán — Rider Acceptance Prediction</title>
-<meta name="description" content="Giới thiệu bài toán Matching Rider Acceptance Rate — dự đoán khách hàng huỷ chuyến, luồng nghiệp vụ, cách tiếp cận ML và baseline ban đầu.">
+<title>Giới thiệu bài toán — Rider Cancellation Prediction</title>
+<meta name="description" content="Giới thiệu bài toán Matching Rider Cancellation Rate — dự đoán khách hàng huỷ chuyến, luồng nghiệp vụ, cách tiếp cận ML và baseline ban đầu.">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;650&family=IBM+Plex+Serif:wght@600;700&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -21,15 +21,15 @@
 <div class="wrap wrap-top wrap-rest">
 
   <header class="page">
-    <span class="eyebrow">Rider Acceptance Prediction · Bài toán</span>
+    <span class="eyebrow">Rider Cancellation Prediction · Bài toán</span>
     <h1>Dự đoán khách huỷ chuyến sau khi tài xế đã nhận</h1>
-    <p class="subtitle">Bài toán, luồng nghiệp vụ, cách tiếp cận Machine Learning và baseline gốc ban đầu của dự án Matching Rider Acceptance Rate.</p>
+    <p class="subtitle">Bài toán, luồng nghiệp vụ, cách tiếp cận Machine Learning và baseline gốc ban đầu của dự án Matching Rider Cancellation Rate.</p>
   </header>
 
   <section class="block" id="muc-tieu">
     <h2><span class="num">0</span>Mục tiêu bài toán</h2>
     <p class="intro">Trong quy trình đặt xe, sau khi khách hàng tạo booking và tài xế nhận chuyến, ứng dụng hiển thị thông tin tài xế, biển số xe, vị trí và thời gian dự kiến đến đón. Tại thời điểm này, khách hàng có thể tiếp tục chờ hoặc huỷ chuyến.</p>
-    <p><b>Matching Rider Acceptance Rate</b> dùng Machine Learning để dự đoán khả năng khách hàng tiếp tục chuyến sau khi đã có tài xế nhận. Đây là bài toán dự đoán <b>hành vi của khách hàng</b> — không phải dự đoán tài xế có nhận chuyến hay không.</p>
+    <p><b>Matching Rider Cancellation Rate</b> dùng Machine Learning để dự đoán khả năng khách hàng tiếp tục chuyến sau khi đã có tài xế nhận. Đây là bài toán dự đoán <b>hành vi của khách hàng</b> — không phải dự đoán tài xế có nhận chuyến hay không.</p>
 
     <div class="flow">
       <div class="flow-step"><div class="flow-title">Khách đặt chuyến</div><div class="flow-sub">Tạo booking</div></div>
@@ -163,7 +163,7 @@
   </section>
 
   <footer>
-    Rider Acceptance Prediction · nguồn: <code>matching_rider_acceptance_rate_condensed.md</code>, <code>rider_cancellation_baseline_model.md</code> ·
+    Rider Cancellation Prediction · nguồn: <code>matching_rider_acceptance_rate_condensed.md</code>, <code>rider_cancellation_baseline_model.md</code> ·
     tiếp theo: <a href="tuan-1.html">Báo cáo Tuần 1 →</a>
   </footer>
 

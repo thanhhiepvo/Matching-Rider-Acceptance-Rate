@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Báo cáo Tuần 3 — Rider Acceptance Prediction</title>
+<title>Báo cáo Tuần 3 — Rider Cancellation Prediction</title>
 <meta name="description" content="Tuần 3: so sánh 6 model class (LightGBM, XGBoost, CatBoost, MLP, FT-Transformer, MambaTab) tune đúng Cancel PR-AUC, xử lý imbalance + calibration, Model V3.">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;650&family=IBM+Plex+Serif:wght@600;700&display=swap">
@@ -21,11 +21,11 @@
 <div class="wrap wrap-top wrap-rest">
 
   <header class="page">
-    <span class="eyebrow">Rider Acceptance Prediction · Tuần 3</span>
+    <span class="eyebrow">Rider Cancellation Prediction · Tuần 3</span>
     <h1>Modeling, Training &amp; Evaluation — 6 model class</h1>
     <p class="subtitle">Từ short-list feature của Tuần 2 → build → train → evaluate thành pipeline chuẩn cho mọi model class; đề xuất model class thay thế LightGBM baseline.</p>
     <table class="meta-table">
-      <tr><td class="k">Dự án</td><td>Rider Acceptance (Matching &amp; Dispatch)</td><td class="k">Tuần</td><td>W3 · 03/08–09/08/2026</td></tr>
+      <tr><td class="k">Dự án</td><td>Rider Cancellation (Matching &amp; Dispatch)</td><td class="k">Tuần</td><td>W3 · 03/08–09/08/2026</td></tr>
       <tr><td class="k">Test set</td><td>13/07/2026 (post-dispatch), n=8.609</td><td class="k">Trạng thái</td><td><span class="tag ok">✓ Bản cuối — 6 model đã tune đúng Cancel PR-AUC</span></td></tr>
     </table>
   </header>
@@ -104,7 +104,7 @@
   </section>
 
   <footer>
-    Rider Acceptance Prediction · Tuần 3 · nguồn: <code>reports/W3_results_summary.pdf</code>, <code>reports/W3_results.ipynb</code> (bản đầy đủ) ·
+    Rider Cancellation Prediction · Tuần 3 · nguồn: <code>reports/W3_results_summary.pdf</code>, <code>reports/W3_results.ipynb</code> (bản đầy đủ) ·
     tiếp theo: <a href="index.html">Kiến trúc FT-Transformer →</a>
   </footer>
 
