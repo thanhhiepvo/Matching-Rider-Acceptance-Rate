@@ -35,6 +35,10 @@
     <img src="ft-transformer-architecture.png" alt="Sơ đồ kiến trúc FT-Transformer: Input Features → Feature Tokenizer → Stack of embedding vectors → Encoder Layer (×N) → Predict [CLS]">
     <figcaption>Input Features (17 numeric + 3 categorical) → Feature Tokenizer → chuỗi embedding + [CLS] → Encoder Layer ×N → lấy [CLS] cuối → dự đoán.</figcaption>
   </figure>
+  <figure class="diagram-inline">
+    <img src="encoder-layer-detail.png" alt="Sơ đồ chi tiết 1 Encoder Layer: Norm → Multi-head Self-attention (2 head tách Q,K,V riêng) → Concat → Linear → cộng residual → Norm → Feed-Forward (Linear→GeLU→Linear) → cộng residual">
+    <figcaption>Bên trong 1 lớp encoder (cấu hình thật: H=2 head, d_head=32, d_ffn=256).</figcaption>
+  </figure>
 </div>
 
 <div class="wrap wrap-rest">

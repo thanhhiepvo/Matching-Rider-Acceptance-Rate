@@ -91,6 +91,11 @@ figure.diagram { margin: 0; background: var(--surface); border: 1px solid var(--
 figure.diagram img { display: block; width: 100%; height: auto; min-width: 760px; }
 figure.diagram figcaption { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
 
+figure.diagram-inline { margin: 20px auto 0; max-width: 420px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: var(--shadow); padding: 12px; }
+figure.diagram-inline img { display: block; width: 100%; height: auto; }
+figure.diagram-inline figcaption { margin-top: 12px; font-size: 12.5px; color: var(--ink-soft); text-align: center; }
+
 section.block { margin: 56px 0; }
 section.block h2 {
   font-family: "IBM Plex Serif", Georgia, serif; font-size: 22px; font-weight: 700;
