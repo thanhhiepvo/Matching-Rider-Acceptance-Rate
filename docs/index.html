@@ -20,6 +20,8 @@
 </div></nav>
 <div class="wrap wrap-top">
 
+  <div class="print-only print-banner">Bản demo tương tác (hover xem thống kê thật, dark mode): <a href="https://thanhhiepvo.github.io/Matching-Rider-Acceptance-Rate/">https://thanhhiepvo.github.io/Matching-Rider-Acceptance-Rate/</a></div>
+
   <header class="page">
     <span class="eyebrow">Rider Acceptance Prediction · FT-Transformer</span>
     <h1>Kiến trúc FT-Transformer — sơ đồ &amp; toán học từng bước</h1>
@@ -446,7 +448,7 @@
     <div class="formula-card">
       <div class="label">Categorical feature j</div>
       <div class="katex-formula" data-display="1" data-tex="T_j^{(cat)} = \text{Lookup}\big(W_j^{(cat)},\, x_j\big) \in \mathbb{R}^d"></div>
-      <div class="note">Paper gốc cộng thêm <span class="katex-formula" data-tex="b_j^{(cat)}"></span> vào đây. Code dự án <b>bỏ bias này</b> — đã kiểm chứng bằng thực nghiệm (thêm vào làm Cancel PR-AUC giảm 0,0126 trên tập test) và về mặt toán học nó dư thừa: mỗi hàng trong bảng lookup vốn đã là 1 vector tự do hoàn toàn, cộng thêm 1 bias chung không mở rộng thêm gì để học được.</div>
+      <p style="margin:10px 0 0; font-size:12.5px; color:var(--ink-muted)">Paper gốc có thêm 1 bias ở đây — xem <a href="#cat-bias" style="color:var(--accent-ink)">lưu ý cuối trang</a>.</p>
     </div>
 
     <div class="formula-card">
@@ -524,6 +526,22 @@
       </table>
     </div>
   </section>
+
+  <div class="aside" id="cat-bias">
+    <div class="aside-label">Lưu ý thêm</div>
+    <h2>Categorical có nên có bias không? — khác biệt so với paper</h2>
+    <p class="intro">Điểm khác biệt duy nhất giữa công thức categorical trong code dự án và paper gốc — đào sâu lại vì đây là chi tiết dễ bị hỏi khi trình bày kiến trúc.</p>
+    <div class="note">Paper gốc cộng thêm <span class="katex-formula" data-tex="b_j^{(cat)}"></span> vào công thức categorical (1 vector bias riêng theo từng <b>feature</b>, dùng chung cho mọi giá trị category của feature đó). Nhưng ngay trong code chính thức của tác giả, bias này chỉ là một <b>tuỳ chọn có thể bật/tắt</b> — kèm chú thích nguyên văn: <i>"In the paper, FT-Transformer uses bias=True"</i> — trong khi bias bên numeric thì bắt buộc, không có tuỳ chọn để tắt. Ngay cả tác giả cũng phân biệt 2 loại bias này khác cấp độ.</div>
+    <div class="note">Code dự án <b>bỏ bias categorical</b> — về mặt toán học nó dư thừa: mỗi hàng trong bảng lookup vốn đã là 1 vector tự do hoàn toàn, cộng thêm 1 bias chung không mở rộng thêm gì để học được (khác numeric: thiếu <span class="katex-formula" data-tex="b_j^{(num)}"></span> thì token luôn bằng 0 khi <span class="katex-formula" data-tex="x_j=0"></span> — mất hẳn khả năng affine).</div>
+    <p class="intro" style="margin-top:14px">Kiểm chứng bằng thực nghiệm thật — cùng data, cùng hyperparameter (V2 đã tune), cùng Focal Loss, chỉ đổi đúng 1 biến: có/không bias categorical.</p>
+    <div class="table-wrap">
+      <table class="report">
+        <tr><th>Cấu hình</th><th class="num">ROC-AUC</th><th class="num">Cancel PR-AUC</th><th class="num">Δ Cancel PR-AUC</th></tr>
+        <tr class="win"><td><b>Không bias categorical (code hiện tại)</b></td><td class="num">0,7441</td><td class="num"><b>0,2508</b></td><td class="num">—</td></tr>
+        <tr class="lose"><td>+ bias categorical (khớp công thức paper)</td><td class="num">0,7377</td><td class="num">0,2382</td><td class="num">−0,0126</td></tr>
+      </table>
+    </div>
+  </div>
 
   <footer>
     Rider Acceptance Prediction · nguồn: <code>Baseline/train_ft_transformer.py</code> ·
