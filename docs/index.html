@@ -534,7 +534,7 @@
   <div class="aside" id="cat-bias">
     <div class="aside-label">Lưu ý thêm</div>
     <h2>Categorical có nên có bias không? — khác biệt so với paper</h2>
-    <p class="intro">Điểm khác biệt duy nhất giữa công thức categorical trong code dự án và paper gốc — đào sâu lại vì đây là chi tiết dễ bị hỏi khi trình bày kiến trúc.</p>
+    <p class="intro">Điểm khác biệt duy nhất giữa công thức categorical trong code dự án và paper gốc.</p>
     <div class="note">Paper gốc cộng thêm <span class="katex-formula" data-tex="b_j^{(cat)}"></span> vào công thức categorical (1 vector bias riêng theo từng <b>feature</b>, dùng chung cho mọi giá trị category của feature đó). Nhưng ngay trong code chính thức của tác giả, bias này chỉ là một <b>tuỳ chọn có thể bật/tắt</b> — kèm chú thích nguyên văn: <i>"In the paper, FT-Transformer uses bias=True"</i> — trong khi bias bên numeric thì bắt buộc, không có tuỳ chọn để tắt. Ngay cả tác giả cũng phân biệt 2 loại bias này khác cấp độ.</div>
     <div class="note">Code dự án <b>bỏ bias categorical</b> — về mặt toán học nó dư thừa: mỗi hàng trong bảng lookup vốn đã là 1 vector tự do hoàn toàn, cộng thêm 1 bias chung không mở rộng thêm gì để học được (khác numeric: thiếu <span class="katex-formula" data-tex="b_j^{(num)}"></span> thì token luôn bằng 0 khi <span class="katex-formula" data-tex="x_j=0"></span> — mất hẳn khả năng affine).</div>
     <p class="intro" style="margin-top:14px">Kiểm chứng bằng thực nghiệm thật — cùng data, cùng hyperparameter (V2 đã tune), cùng Focal Loss, chỉ đổi đúng 1 biến: có/không bias categorical.</p>
